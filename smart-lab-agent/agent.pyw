@@ -286,7 +286,10 @@ class SessionInfoBar(QWidget):
         if reason:
             dlg = ViolationDialog(reason)
             dlg.exec()
-        self.overlay.agent.stop_and_send_logs(self.session_id)
+        self.overlay.agent.stop_and_send_logs(
+            self.session_id,
+            end_reason="violation" if reason else "logout",
+        )
         self.hide()
         self.overlay.reset_and_show()
 
@@ -441,7 +444,10 @@ class LoginOverlay(QWidget):
                 else:
                     status = session_res.status_code if session_res else "Timeout"
                     print(f"Session Error [{status}]: {session_res.text if session_res else '-'}")
-                    self._show_error("ไม่สามารถสร้าง Session ใหม่ได้")
+                    if status == 409:
+                        self._show_error("ผู้ใช้หรือเครื่องนี้มี Session ที่ยังไม่จบอยู่")
+                    else:
+                        self._show_error("ไม่สามารถสร้าง Session ใหม่ได้")
             elif res.status_code == 403:
                 self._show_error("บัญชีนี้รอการอนุมัติจาก Admin")
             else:
@@ -466,6 +472,8 @@ class SmartLabAgent:
         self.violation_reported = False
         self.monitor_timer  = QTimer()
         self.monitor_timer.timeout.connect(self.track_usage)
+        self.heartbeat_timer = QTimer()
+        self.heartbeat_timer.timeout.connect(self.send_heartbeat)
 
     def set_ui_references(self, overlay):
         self.overlay = overlay
@@ -504,6 +512,29 @@ class SmartLabAgent:
         self.violation_reported = False
         self.fetch_blacklist()
         self.monitor_timer.start(5000)
+        self.heartbeat_timer.start(30000)
+
+    def send_heartbeat(self):
+        if not self.current_session_id:
+            return
+
+        try:
+            response = post_with_retry(
+                f"{API_URL}/agent/heartbeat",
+                data={
+                    "session_id": self.current_session_id,
+                    "device_mac": DEVICE_MAC,
+                },
+                retries=1,
+                timeout=10,
+            )
+            if response and response.status_code == 409:
+                print("Session ไม่ active แล้ว กำลังกลับไปหน้า Login")
+                self.heartbeat_timer.stop()
+                if self.info_bar:
+                    self.info_bar.trigger_logout()
+        except Exception as e:
+            print(f"ส่ง heartbeat ไม่ได้: {e}")
 
     def _close_current_activity(self, ended_at=None):
         if not self.current_activity_name or not self.current_activity_started_at:
@@ -606,8 +637,9 @@ class SmartLabAgent:
         except Exception:
             pass
 
-    def stop_and_send_logs(self, session_id):
+    def stop_and_send_logs(self, session_id, end_reason="logout"):
         self.monitor_timer.stop()
+        self.heartbeat_timer.stop()
         self._close_current_activity(datetime.now())
         summary = self.usage_segments
 
@@ -634,7 +666,10 @@ class SmartLabAgent:
         try:
             end_response = post_with_retry(
                 f"{API_URL}/agent/end-session",
-                data={"session_id": session_id},
+                data={
+                    "session_id": session_id,
+                    "end_reason": end_reason,
+                },
             )
             print(f"End session response: {end_response.status_code if end_response else 'Timeout'}")
         except Exception as e:

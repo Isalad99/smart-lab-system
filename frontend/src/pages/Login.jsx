@@ -8,7 +8,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import LanguageIcon from '@mui/icons-material/Language';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { loginLocales } from '../utils/locales';
 
 const API_URL = import.meta.env.VITE_API_URL;

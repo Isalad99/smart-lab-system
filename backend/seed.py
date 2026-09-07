@@ -1,3 +1,5 @@
+import os
+
 import models
 from database import SessionLocal, engine
 from sqlalchemy.orm import Session
@@ -20,6 +22,11 @@ DEFAULT_LABS = [
         "status": "active",
     }
 ]
+
+TEST_STUDENT_EMAIL = os.getenv("SEED_TEST_STUDENT_EMAIL", "student.test@bumail.net")
+TEST_STUDENT_ID = os.getenv("SEED_TEST_STUDENT_ID", "TEST0001")
+ADMIN_PASSWORD = os.getenv("SEED_ADMIN_PASSWORD")
+TEST_STUDENT_PASSWORD = os.getenv("SEED_TEST_STUDENT_PASSWORD")
 
 DEFAULT_BLACKLIST = [
     {"app_name": "BitTorrent",    "description": "ห้ามใช้โปรแกรมโหลดไฟล์ละเมิดลิขสิทธิ์"},
@@ -60,20 +67,65 @@ def seed_blacklisted_apps(db: Session) -> None:
 
 def seed_users(db: Session) -> None:
     admin_email = "admin@smartlab.com"
-    if db.query(models.User).filter(models.User.email == admin_email).first():
-        return  # already exists, skip
-
     admin_role = db.query(models.Role).filter(models.Role.name == "admin").first()
-    admin_user = models.User(
-        first_name="System",
-        last_name="Admin",
-        email=admin_email,
-        password=pwd_context.hash("admin1234"),
-    )
-    if admin_role:
+    admin_user = db.query(models.User).filter(models.User.email == admin_email).first()
+    if not admin_user:
+        if not ADMIN_PASSWORD:
+            raise ValueError("SEED_ADMIN_PASSWORD is required to create the admin user.")
+        admin_user = models.User(
+            first_name="System",
+            last_name="Admin",
+            email=admin_email,
+            password=pwd_context.hash(ADMIN_PASSWORD),
+        )
+        db.add(admin_user)
+        db.flush()
+        print(f"  + admin: {admin_email}")
+
+    if admin_role and admin_role not in admin_user.roles:
         admin_user.roles.append(admin_role)
-    db.add(admin_user)
-    print(f"  + admin: {admin_email}")
+
+    student_role = db.query(models.Role).filter(models.Role.name == "student").first()
+    test_student = db.query(models.User).filter(
+        models.User.email == TEST_STUDENT_EMAIL
+    ).first()
+    if not test_student:
+        if not TEST_STUDENT_PASSWORD:
+            raise ValueError(
+                "SEED_TEST_STUDENT_PASSWORD is required to create the test student."
+            )
+        test_student = models.User(
+            first_name="Test",
+            last_name="Student",
+            email=TEST_STUDENT_EMAIL,
+            password=pwd_context.hash(TEST_STUDENT_PASSWORD),
+        )
+        db.add(test_student)
+        db.flush()
+        print(f"  + test student: {TEST_STUDENT_EMAIL}")
+
+    if student_role and student_role not in test_student.roles:
+        test_student.roles.append(student_role)
+
+    student_record = db.query(models.Student).filter(
+        models.Student.user_id == test_student.id
+    ).first()
+    if not student_record:
+        existing_student_id = db.query(models.Student).filter(
+            models.Student.student_id == TEST_STUDENT_ID
+        ).first()
+        if existing_student_id and existing_student_id.user_id != test_student.id:
+            raise ValueError(
+                f"Student ID {TEST_STUDENT_ID} belongs to another user."
+            )
+        db.add(models.Student(
+            student_id=TEST_STUDENT_ID,
+            user_id=test_student.id,
+            faculty="Test Faculty",
+            department="Test Department",
+            is_active=True,
+        ))
+        print(f"  + student record: {TEST_STUDENT_ID}")
 
 
 def seed_data() -> None:

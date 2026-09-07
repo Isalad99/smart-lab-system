@@ -13,7 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import SupportModal from './SupportModal';
 
 // API Endpoint configuration
@@ -68,15 +68,10 @@ export default function Booking() {
   // 4. LIFECYCLE & API CALLS
   // ============================================================================
   
-  // Fetch labs on component mount
-  useEffect(() => {
-    fetchLabs();
-  }, []);
-
   /**
    * Fetches all available lab rooms from the backend.
    */
-  const fetchLabs = async () => {
+  const fetchLabs = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/labs`);
       setLabs(response.data.data);
@@ -84,7 +79,14 @@ export default function Booking() {
       console.error("[API Error] Failed to fetch labs:", error);
       alert("Error: Unable to fetch lab data. Please check backend connection.");
     }
-  };
+  }, []);
+
+  // Fetch labs on component mount
+  useEffect(() => {
+    // This effect intentionally loads remote data and updates state asynchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLabs();
+  }, [fetchLabs]);
 
   /**
    * Fetches availability for a specific lab room on a given date.
@@ -147,7 +149,7 @@ export default function Booking() {
    * Validates if the selected time slot can be booked based on the 2-hour advance rule.
    * @returns {"valid" | "passed" | "too_close"}
    */
-  const checkSlotTimeValidity = useCallback((slotNumber) => {
+  const checkSlotTimeValidity = (slotNumber) => {
     if (!selectedDate) return "valid";
 
     const selectedDateObj = new Date(currentYear, currentMonth, selectedDate);
@@ -169,7 +171,7 @@ export default function Booking() {
     if (slotTimeObj.getTime() < twoHoursFromNow.getTime()) return "too_close";
 
     return "valid";
-  }, [selectedDate, currentYear, currentMonth]);
+  };
 
   // ============================================================================
   // 6. ACTION HANDLERS

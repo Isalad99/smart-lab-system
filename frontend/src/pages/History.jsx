@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. IMPORTS & CONFIGURATION
 // ============================================================================
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Typography, Avatar, IconButton, Paper, CircularProgress,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow
@@ -13,7 +13,7 @@ import {
 
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -25,15 +25,9 @@ export default function History() {
   const [pastBookings, setPastBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate('/'); 
-      return;
-    }
-    fetchMyHistory();
-  }, [currentUser, navigate]);
+  const fetchMyHistory = useCallback(async () => {
+    if (!currentUser) return;
 
-  const fetchMyHistory = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/bookings/user/${currentUser.email}`);
@@ -54,7 +48,15 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+      return;
+    }
+    fetchMyHistory();
+  }, [currentUser, fetchMyHistory, navigate]);
 
   const handleLogout = () => {
     logout();

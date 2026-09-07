@@ -111,6 +111,16 @@ class LabAccessLog(Base):
     status = Column(String, nullable=False)        # success | denied
     device_used = Column(String, nullable=True)
     device_mac = Column(String, nullable=True)
+    session_status = Column(
+        Text,
+        nullable=False,
+        default="active",
+        server_default="active",
+    )  # active | completed | abandoned
+    end_reason = Column(Text, nullable=True)
+    last_heartbeat_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 
 class ProgramUsageLog(Base):

@@ -37,7 +37,7 @@ export default function VerifyUsers() {
     try {
       await axios.put(`${API_URL}/admin/users/${userId}/verify`, { action });
       fetchPendingUsers(); // รีเฟรชข้อมูลหลังกด
-    } catch (error) {
+    } catch {
       alert(`Failed to ${action} user.`);
     }
   };

@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. IMPORTS & CONFIGURATION
 // ============================================================================
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Typography, Avatar, IconButton, Paper, CircularProgress,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -15,7 +15,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,15 +29,9 @@ export default function Reserved() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate('/'); 
-      return;
-    }
-    fetchMyBookings();
-  }, [currentUser, navigate]);
+  const fetchMyBookings = useCallback(async () => {
+    if (!currentUser) return;
 
-  const fetchMyBookings = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/bookings/user/${currentUser.email}`);
@@ -58,7 +52,15 @@ export default function Reserved() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+      return;
+    }
+    fetchMyBookings();
+  }, [currentUser, fetchMyBookings, navigate]);
 
   const handleConfirmCancel = async () => {
     if (!bookingToCancel) return;
@@ -69,7 +71,7 @@ export default function Reserved() {
       setCancelDialogOpen(false);
       setBookingToCancel(null);
       fetchMyBookings();
-    } catch (error) {
+    } catch {
       alert("Failed to cancel booking.");
     }
   };

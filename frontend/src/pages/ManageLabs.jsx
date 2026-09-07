@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. IMPORTS & CONFIGURATION
 // ============================================================================
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Typography, Avatar, IconButton, Paper, Grid, Divider, Chip,
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
@@ -75,22 +75,25 @@ export default function ManageLabs() {
   // ============================================================================
   // 5. LIFECYCLE & API CALLS
   // ============================================================================
-  useEffect(() => {
-    fetchLabs();
-  }, []); 
-
-  const fetchLabs = async () => {
+  const fetchLabs = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/labs`);
-      setLabs(response.data.data);
-      if (activeLab) {
-        const updatedLab = response.data.data.find(l => l.id === activeLab.id);
-        if (updatedLab) setActiveLab(updatedLab);
-      }
+      const fetchedLabs = response.data.data;
+      setLabs(fetchedLabs);
+      setActiveLab((currentActiveLab) => {
+        if (!currentActiveLab) return currentActiveLab;
+        return fetchedLabs.find(lab => lab.id === currentActiveLab.id) || currentActiveLab;
+      });
     } catch (error) {
       console.error("[API Error] Fetch labs failed:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // This effect intentionally loads remote data and updates state asynchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLabs();
+  }, [fetchLabs]);
 
   const fetchSchedules = async (labId) => {
     try {
@@ -234,7 +237,7 @@ export default function ManageLabs() {
     try {
       await axios.delete(`${API_URL}/admin/schedules/${scheduleId}`);
       fetchSchedules(activeLab.id);
-    } catch (error) {
+    } catch {
       alert("Delete failed");
     }
   };

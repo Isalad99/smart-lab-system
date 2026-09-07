@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -28,13 +29,22 @@ def record_scan(data: ScanData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Access denied: User not found.")
 
+    lab = db.query(models.Lab).filter(models.Lab.id == data.lab_id).first()
+    if not lab:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Access denied: Lab not found.")
+
     try:
+        scan_time = datetime.now()
         db.add(models.LabAccessLog(
             lab_id=data.lab_id,
             user_id=user.id,
+            entry_time=scan_time,
+            exit_time=scan_time,
             access_type="entry",
             status="success",
             device_used="AI Gatekeeper Kiosk",
+            session_status="completed",
+            end_reason="gatekeeper_scan",
         ))
         db.commit()
     except Exception as e:
