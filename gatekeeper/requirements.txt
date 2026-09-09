@@ -1,18 +1,9 @@
-# --- Core Image Processing & Math ---
+# Runtime dependencies for the CPU-only face/liveness kiosk
 opencv-python==4.8.1.78
 numpy==1.26.2
-scipy==1.11.4
-Pillow>=10.0.0
+Pillow>=10.0.0,<13
+customtkinter>=5.2.0,<6
 
-# --- Face Recognition & Anti-Spoofing ---
-facenet-pytorch>=2.5.3
-torch==2.1.2
-torchvision==0.16.2
-
-# --- UI Framework ---
-customtkinter>=5.2.0
-
-# --- Backend & Database ---
-supabase>=2.0.0
-requests==2.31.0
-python-dotenv==1.0.0
+# The kiosk uses CPU inference; avoid downloading CUDA runtimes on lab PCs.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.2+cpu

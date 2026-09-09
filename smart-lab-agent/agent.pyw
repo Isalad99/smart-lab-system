@@ -78,9 +78,9 @@ def post_with_retry(url, data=None, json_data=None, retries=3, timeout=15):
 
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-API_URL    = "https://h0sh1na-smart-lab-backend.hf.space"
-LAB_CODE   = "LAB01"
-DEBUG_MODE = True   # ← เปลี่ยนเป็น False ก่อน deploy จริง
+API_URL    = os.getenv("SMART_LAB_API_URL", "https://h0sh1na-smart-lab-backend.hf.space").rstrip("/")
+LAB_CODE   = os.getenv("SMART_LAB_CODE", "LAB01")
+DEBUG_MODE = os.getenv("SMART_LAB_AGENT_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
 DEVICE_NAME = socket.gethostname()
 DEVICE_MAC  = ':'.join(f'{byte:02x}' for byte in uuid.getnode().to_bytes(6, 'big'))
 

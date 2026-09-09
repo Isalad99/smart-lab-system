@@ -55,8 +55,13 @@ class AntiSpoofPredict(Detection):
         super(AntiSpoofPredict, self).__init__()
         self.device = torch.device("cuda:{}".format(device_id)
                                    if torch.cuda.is_available() else "cpu")
+        self.model = None
+        self.model_path = None
 
     def _load_model(self, model_path):
+        if self.model is not None and self.model_path == model_path:
+            return
+
         # define model
         model_name = os.path.basename(model_path)
         h_input, w_input, model_type, _ = parse_model_name(model_name)
@@ -76,7 +81,13 @@ class AntiSpoofPredict(Detection):
             self.model.load_state_dict(new_state_dict)
         else:
             self.model.load_state_dict(state_dict)
+        self.model_path = model_path
         return None
+
+    def load_model(self, model_path):
+        """Load the small anti-spoof model once and reuse it for each scan."""
+        self._load_model(model_path)
+        self.model.eval()
 
     def predict(self, img, model_path):
         test_transform = trans.Compose([
@@ -84,13 +95,11 @@ class AntiSpoofPredict(Detection):
         ])
         img = test_transform(img)
         img = img.unsqueeze(0).to(self.device)
-        self._load_model(model_path)
-        self.model.eval()
-        with torch.no_grad():
+        self.load_model(model_path)
+        with torch.inference_mode():
             result = self.model.forward(img)
-            result = F.softmax(result).cpu().numpy()
+            result = F.softmax(result, dim=1).cpu().numpy()
         return result
-
 
 
 

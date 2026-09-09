@@ -95,6 +95,8 @@ pip install -r requirements.txt
 python smart_gatekeeper.py
 ```
 
+Gatekeeper ใช้ CPU inference และ requirements นี้เลือก PyTorch แบบ CPU-only เพื่อไม่ติดตั้ง CUDA runtime ที่ไม่จำเป็นกับเครื่องสแกนหน้า หากต้อง build executable ให้ติดตั้ง requirements-build.txt แล้วรัน pyinstaller --clean --noconfirm smart_gatekeeper.spec
+
 ผลที่คาดหวัง:
 
 1. เปิดโปรแกรมแล้วสถานะเปลี่ยนเป็น `READY TO SCAN`
@@ -136,7 +138,7 @@ Agent รุ่น source อยู่ที่ `smart-lab-agent/agent.pyw` ส�
 cd smart-lab-agent
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install PyQt6 psutil requests pygetwindow
+pip install -r requirements.txt
 python agent.pyw
 ```
 
@@ -144,10 +146,14 @@ python agent.pyw
 
 - `API_URL`: URL ของ Backend ที่ Agent จะเรียก
 - `LAB_CODE`: รหัสห้องที่ต้องมีอยู่ใน Database เช่น `LAB01`
-- `DEBUG_MODE = True`: ป้องกันการ logout Windows ระหว่างทดสอบ
+- `SMART_LAB_API_URL`: override URL ของ Backend โดยไม่ต้องแก้ source
+- `SMART_LAB_CODE`: override รหัสห้อง
+- `SMART_LAB_AGENT_DEBUG=1`: ป้องกันการ logout Windows ระหว่างทดสอบ; ตั้งเป็น `0` ตอนใช้งานจริง
 - `DEVICE_NAME` และ `DEVICE_MAC`: อ่านจากเครื่องและส่งตอนสร้าง session
 
-ถ้าทดสอบ Backend local ให้เปลี่ยน `API_URL` เป็น `http://127.0.0.1:8000` ชั่วคราว หรือ build executable ใหม่หลังแก้ค่าแล้ว
+ถ้าต้อง build executable ให้ติดตั้ง requirements-build.txt แล้วรัน pyinstaller --clean --noconfirm agent.spec
+
+ถ้าทดสอบ Backend local ให้ตั้งค่า SMART_LAB_API_URL เป็น http://127.0.0.1:8000 ก่อนรัน Agent หรือ build executable ใหม่หลังแก้ค่าแล้ว
 
 ### Test case: บันทึกการใช้โปรแกรมปกติ
 

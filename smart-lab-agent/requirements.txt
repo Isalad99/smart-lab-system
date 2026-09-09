@@ -1,0 +1,5 @@
+# Runtime dependencies for the Windows tracking Agent
+PyQt6>=6.6,<7
+psutil>=5.9,<8
+requests>=2.31,<3
+PyGetWindow==0.0.9

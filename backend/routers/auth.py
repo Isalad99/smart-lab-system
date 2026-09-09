@@ -1,17 +1,28 @@
 import io
 import os
 import random
+from functools import lru_cache
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from PIL import Image
-from deepface import DeepFace
-
 import models, schemas
 from database import get_db
 from utils import send_otp_mail, create_access_token, pwd_context, UPLOAD_DIR
 
 router = APIRouter(tags=["Authentication"])
+MAX_FACE_IMAGE_BYTES = 5 * 1024 * 1024
+
+
+@lru_cache(maxsize=1)
+def _get_deepface():
+    """Load the face model only for registration, not for every API startup."""
+    os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "2")
+    os.environ.setdefault("TF_NUM_INTEROP_THREADS", "1")
+    os.environ.setdefault("OMP_NUM_THREADS", "2")
+    from deepface import DeepFace
+
+    return DeepFace
 
 
 @router.post("/request-otp")
@@ -73,19 +84,31 @@ async def register(
 
     # resize and save the face image before running DeepFace
     try:
-        image_data = await face_image.read()
+        image_data = await face_image.read(MAX_FACE_IMAGE_BYTES + 1)
+        if len(image_data) > MAX_FACE_IMAGE_BYTES:
+            raise HTTPException(status_code=413, detail="Face image is too large.")
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
         image.thumbnail((200, 200))
         safe_email = email.replace("@", "_").replace(".", "_")
         file_path = f"{UPLOAD_DIR}/{safe_email}.jpg"
         image.save(file_path, "JPEG", quality=85)
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=400, detail="Failed to process image file.")
 
     # enforce_detection=True raises an exception if no face is found
     try:
-        embedding_objs = DeepFace.represent(img_path=file_path, model_name="Facenet", enforce_detection=True)
+        embedding_objs = _get_deepface().represent(
+            img_path=file_path,
+            model_name="Facenet",
+            enforce_detection=True,
+        )
         face_embedding_vector = embedding_objs[0]["embedding"]
+    except HTTPException:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise
     except Exception:
         if os.path.exists(file_path):
             os.remove(file_path)

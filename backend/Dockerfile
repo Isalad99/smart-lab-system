@@ -1,23 +1,27 @@
 # ใช้ Python 3.11 เป็นฐาน
 FROM python:3.11-slim
 
-# ติดตั้งเครื่องมือพื้นฐานที่จำเป็นสำหรับคอมไพล์ C++ (dlib) และ OpenCV
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
+# ติดตั้งเฉพาะ shared libraries ที่ใช้ตอนรัน OpenCV/TensorFlow
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 🌟 เพิ่มคำสั่งเวทมนตร์ตรงนี้! บังคับให้ Build ทีละ 1 คิว ป้องกัน RAM ทะลุ
-ENV CMAKE_BUILD_PARALLEL_LEVEL=1
-ENV MAX_JOBS=1
+# จำกัดจำนวน thread ให้เหมาะกับ Server ขนาดเล็กและลดการแย่ง CPU กับ API
+ENV OMP_NUM_THREADS=2
+ENV OPENBLAS_NUM_THREADS=2
+ENV MKL_NUM_THREADS=2
+ENV TF_NUM_INTRAOP_THREADS=2
+ENV TF_NUM_INTEROP_THREADS=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # คัดลอกและติดตั้งไลบรารีทั้งหมด
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --disable-pip-version-check -r requirements.txt
 
 # คัดลอกโค้ดทั้งหมดลงในกล่อง
 COPY . .

@@ -1,11 +1,16 @@
 import os
 import sys
+import time
 import threading
 import queue
 import winsound
 import cv2
 import customtkinter as ctk
 from PIL import Image
+
+# Keep CPU inference predictable on the 8 GB scanning machine.
+os.environ.setdefault("OMP_NUM_THREADS", "2")
+os.environ.setdefault("MKL_NUM_THREADS", "2")
 
 # ── PyInstaller path fix ───────────────────────────────────────────────────────
 def _base_path():
@@ -223,6 +228,7 @@ class GatekeeperDemo(ctk.CTk):
         while True:
             ret, frame = self.cap.read()
             if not ret:
+                time.sleep(0.05)
                 continue
             frame = cv2.flip(frame, 1)
             try:
@@ -273,7 +279,15 @@ class GatekeeperDemo(ctk.CTk):
 
             try:
                 import torch
-                torch.set_num_threads(2)
+                try:
+                    torch_threads = max(1, int(os.getenv("SMART_GATEKEEPER_TORCH_THREADS", "2")))
+                except ValueError:
+                    torch_threads = 2
+                torch.set_num_threads(torch_threads)
+                try:
+                    torch.set_num_interop_threads(1)
+                except RuntimeError:
+                    pass
                 print(f"[DEBUG] torch OK, CUDA={torch.cuda.is_available()}")
             except Exception as te:
                 print(f"[DEBUG] torch warning: {te}")
@@ -283,6 +297,7 @@ class GatekeeperDemo(ctk.CTk):
             os.chdir(repo_path)
             self.anti_spoof = AntiSpoofPredict(device_id=None)
             os.chdir(orig)
+            self.anti_spoof.load_model(self.model_path)
 
             print("[Gatekeeper] model loaded OK.")
             self.models_loaded = True
