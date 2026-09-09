@@ -15,9 +15,11 @@
 
 ### ขอบเขตปัจจุบันที่ควรรู้
 
-- Gatekeeper ใช้ AI ตรวจว่าใบหน้าเป็นคนจริงหรือภาพปลอม แต่หน้าจอ `smart_gatekeeper.py` ยังไม่ได้เชื่อมการสแกนเข้ากับ `/gatekeeper/scan` โดยอัตโนมัติ
+- Gatekeeper ใช้ MiniFASNetV2 ตรวจว่าใบหน้าเป็นคนจริงหรือภาพปลอม แล้วส่งภาพไปที่ `/gatekeeper/identify` เพื่อให้ Backend ระบุ User จาก Face Embedding
+- `/gatekeeper/identify` เป็นขั้นตอนยืนยันตัวตนและยังไม่สร้าง `LabAccessLog`; Agent ยังคงเป็นเจ้าของ Machine Session, device identity และ heartbeat
+- `/gatekeeper/scan` เดิมยังคงไว้เพื่อความเข้ากันได้กับการทดสอบเก่า และไม่ควรใช้เป็น flow หลักในระบบจริง
 - Agent ไม่ใช่ Machine Learning แต่ใช้ process name, active-window title และรายการ blacklist จาก Backend
-- การสมัครสมาชิกใช้ DeepFace/Facenet สร้าง face embedding แต่การจับคู่ใบหน้ากับผู้ใช้ใน Gatekeeper ยังต้องพัฒนาต่อ
+- การสมัครสมาชิกและการจับคู่ใบหน้าใช้ DeepFace/Facenet บน Backend ส่วนเครื่องสแกนใช้ CPU สำหรับ Liveness เท่านั้น
 - ปุ่ม `Force: Real Face` และ `Force: Spoof / Fake` ใช้ทดสอบ UI ของ Gatekeeper เท่านั้น และไม่เขียนข้อมูลลง Database
 
 ## การเตรียมระบบ
@@ -97,17 +99,41 @@ python smart_gatekeeper.py
 
 Gatekeeper ใช้ CPU inference และ requirements นี้เลือก PyTorch แบบ CPU-only เพื่อไม่ติดตั้ง CUDA runtime ที่ไม่จำเป็นกับเครื่องสแกนหน้า หากต้อง build executable ให้ติดตั้ง requirements-build.txt แล้วรัน pyinstaller --clean --noconfirm smart_gatekeeper.spec
 
+ถ้า Backend ไม่ได้รันที่ค่าเริ่มต้น ให้ตั้งค่า URL และรหัสห้องก่อนเปิด Gatekeeper:
+
+```powershell
+$env:SMART_LAB_API_URL = "http://127.0.0.1:8000"
+$env:SMART_LAB_CODE = "LAB01"
+# ตั้งค่าเฉพาะเมื่อ Backend กำหนด GATEKEEPER_API_KEY ไว้
+$env:SMART_LAB_GATEKEEPER_KEY = "<ค่าเดียวกับ Backend>"
+```
+
 ผลที่คาดหวัง:
 
 1. เปิดโปรแกรมแล้วสถานะเปลี่ยนเป็น `READY TO SCAN`
-2. ใบหน้าจริงได้ผล `ACCESS GRANTED` เมื่อ score มากกว่า `0.72`
+2. ใบหน้าจริงที่ผ่าน Liveness จะเข้าสู่ขั้นตอน `IDENTIFYING...` และเรียก Backend เพื่อยืนยัน User
 3. รูปถ่าย/หน้าจอควรได้ผล `ACCESS DENIED` แต่ผลขึ้นกับแสง กล้อง และคุณภาพภาพ
 4. เปิดรูปแบบทดสอบหลายคนพร้อมกัน ควรแจ้งให้เข้าทีละคน
-5. ถ้า model โหลดไม่ได้ ให้ตรวจ path ของ model, เวอร์ชัน Torch และกล้องก่อน
+5. ถ้าไม่พบ User หรือไม่ผ่านการเทียบ Face Embedding ควรได้ผล `ACCESS DENIED`
+6. ถ้า model โหลดไม่ได้ ให้ตรวจ path ของ model, เวอร์ชัน Torch และกล้องก่อน
 
 การทดสอบปุ่ม Force เป็นเพียงการตรวจสถานะหน้าจอ ไม่ใช่การทดสอบการเขียน Database
 
-### ทดสอบ API ที่บันทึกผล Gatekeeper
+### ทดสอบ API ยืนยันตัวตนของ Gatekeeper
+
+Endpoint ใหม่รับภาพจาก Scanner แล้วใช้ DeepFace/Facenet เปรียบเทียบกับ Embedding ใน `users` โดยไม่สร้าง Lab Session:
+
+```powershell
+$api = "http://127.0.0.1:8000"
+curl.exe -X POST "$api/gatekeeper/identify" `
+  -F "lab_code=LAB01" `
+  -F "liveness_score=0.95" `
+  -F "face_image=@C:\path\to\camera-frame.jpg"
+```
+
+ผลสำเร็จควรคืน `user_id`, `user_name`, `liveness_score`, `face_distance` และ `face_distance_threshold` การสร้าง `lab_access_logs` จริงยังเกิดจาก Agent ตอนเริ่มใช้งานเครื่อง
+
+### API เดิมสำหรับทดสอบย้อนหลัง
 
 API นี้ต้องใช้ `email` ที่มีอยู่ใน `users` และ `lab_id` ที่มีอยู่ใน `labs`:
 

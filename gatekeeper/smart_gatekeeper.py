@@ -6,6 +6,7 @@ import queue
 import winsound
 import cv2
 import customtkinter as ctk
+import requests
 from PIL import Image
 
 # Keep CPU inference predictable on the 8 GB scanning machine.
@@ -29,6 +30,13 @@ CONFIG = {
     "RESET_DELAY_MS":     3000,
     "DETECT_EVERY_N":     3,
 }
+
+API_URL = os.getenv(
+    "SMART_LAB_API_URL",
+    "https://h0sh1na-smart-lab-backend.hf.space",
+).rstrip("/")
+LAB_CODE = os.getenv("SMART_LAB_CODE", "LAB01")
+GATEKEEPER_API_KEY = os.getenv("SMART_LAB_GATEKEEPER_KEY", "")
 
 CLR = {
     "ready":    "#38bdf8",
@@ -358,7 +366,11 @@ class GatekeeperDemo(ctk.CTk):
                     self._last_faces  = []
                     self.after(0, lambda: self.status_label.configure(text="ANALYZING...", text_color=CLR["warning"]))
                     self.after(0, lambda: self.sub_label.configure(text="กำลังตรวจสอบ..."))
-                    threading.Thread(target=self._run_liveness, args=(crop.copy(),), daemon=True).start()
+                    threading.Thread(
+                        target=self._run_liveness,
+                        args=(crop.copy(), frame.copy()),
+                        daemon=True,
+                    ).start()
 
         rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         imgtk = ctk.CTkImage(light_image=Image.fromarray(rgb), dark_image=Image.fromarray(rgb), size=CONFIG["DISPLAY_SIZE"])
@@ -371,14 +383,104 @@ class GatekeeperDemo(ctk.CTk):
     # LIVENESS
     # ──────────────────────────────────────────────────────────────────────
 
-    def _run_liveness(self, crop_img):
+    def _run_liveness(self, crop_img, full_frame):
         try:
             resized = cv2.resize(crop_img, (80, 80))
             score   = float(self.anti_spoof.predict(resized, self.model_path)[0][1])
-            self.after(0, self._show_result, score > CONFIG["LIVENESS_THRESHOLD"], score)
+            if score <= CONFIG["LIVENESS_THRESHOLD"]:
+                self.after(0, self._show_result, False, score)
+                return
+
+            self.after(
+                0,
+                self._set_status,
+                "IDENTIFYING...",
+                CLR["warning"],
+                "กำลังยืนยันตัวตนกับระบบ",
+            )
+            verified, detail = self._identify_face(full_frame, score)
+            self.after(0, self._show_identity_result, verified, score, detail)
         except Exception as e:
             print(f"[Gatekeeper] liveness error: {e}")
             self.after(0, self._reset_state)
+
+    def _identify_face(self, frame, liveness_score):
+        """Send a full camera frame for server-side identity verification."""
+        encoded_ok, encoded = cv2.imencode(
+            ".jpg",
+            frame,
+            [cv2.IMWRITE_JPEG_QUALITY, 85],
+        )
+        if not encoded_ok:
+            return False, "ไม่สามารถเตรียมภาพสำหรับตรวจสอบได้"
+
+        headers = {}
+        if GATEKEEPER_API_KEY:
+            headers["X-Gatekeeper-Key"] = GATEKEEPER_API_KEY
+
+        try:
+            response = requests.post(
+                f"{API_URL}/gatekeeper/identify",
+                data={
+                    "lab_code": LAB_CODE,
+                    "liveness_score": f"{liveness_score:.6f}",
+                },
+                files={
+                    "face_image": (
+                        "gatekeeper.jpg",
+                        encoded.tobytes(),
+                        "image/jpeg",
+                    ),
+                },
+                headers=headers,
+                timeout=15,
+            )
+        except requests.exceptions.RequestException:
+            return False, "เชื่อมต่อ Backend ไม่ได้"
+
+        try:
+            payload = response.json()
+        except ValueError:
+            return False, f"Backend ตอบกลับผิดรูปแบบ ({response.status_code})"
+
+        if response.ok:
+            return True, payload.get("user_name", "ยืนยันตัวตนสำเร็จ")
+
+        detail = payload.get("detail", "ไม่สามารถยืนยันตัวตนได้")
+        return False, str(detail)
+
+    def _show_identity_result(self, verified: bool, score: float, detail: str):
+        self.score_bar.set(score)
+        self.score_pct_label.configure(text=f"{score*100:.0f}%")
+
+        if verified:
+            self._set_status(
+                "ACCESS GRANTED ✓",
+                CLR["granted"],
+                f"ยืนยันตัวตน: {detail}",
+            )
+            self.score_badge.configure(
+                text=f"  Score: {score:.2f}  ",
+                fg_color="#0ea5e9",
+                text_color="white",
+            )
+            self.score_bar.configure(progress_color=CLR["granted"])
+            threading.Thread(
+                target=lambda: [winsound.Beep(1000, 120), winsound.Beep(1200, 120)],
+                daemon=True,
+            ).start()
+            self.after(CONFIG["RESET_DELAY_MS"], self._reset_state)
+            return
+
+        self._set_status("ACCESS DENIED ✗", CLR["denied"], detail)
+        self.score_badge.configure(
+            text=f"  Score: {score:.2f}  ",
+            fg_color="#dc2626",
+            text_color="white",
+        )
+        self.score_bar.configure(progress_color=CLR["denied"])
+        threading.Thread(target=lambda: winsound.Beep(400, 600), daemon=True).start()
+        self.after(CONFIG["RESET_DELAY_MS"], self._start_cooldown)
 
     # ──────────────────────────────────────────────────────────────────────
     # RESULT

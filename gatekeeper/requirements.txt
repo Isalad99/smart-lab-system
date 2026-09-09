@@ -3,6 +3,7 @@ opencv-python==4.8.1.78
 numpy==1.26.2
 Pillow>=10.0.0,<13
 customtkinter>=5.2.0,<6
+requests>=2.31,<3
 
 # The kiosk uses CPU inference; avoid downloading CUDA runtimes on lab PCs.
 --extra-index-url https://download.pytorch.org/whl/cpu

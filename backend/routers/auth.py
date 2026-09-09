@@ -1,28 +1,17 @@
 import io
 import os
 import random
-from functools import lru_cache
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from PIL import Image
 import models, schemas
 from database import get_db
+from face_service import get_deepface
 from utils import send_otp_mail, create_access_token, pwd_context, UPLOAD_DIR
 
 router = APIRouter(tags=["Authentication"])
 MAX_FACE_IMAGE_BYTES = 5 * 1024 * 1024
-
-
-@lru_cache(maxsize=1)
-def _get_deepface():
-    """Load the face model only for registration, not for every API startup."""
-    os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "2")
-    os.environ.setdefault("TF_NUM_INTEROP_THREADS", "1")
-    os.environ.setdefault("OMP_NUM_THREADS", "2")
-    from deepface import DeepFace
-
-    return DeepFace
 
 
 @router.post("/request-otp")
@@ -99,7 +88,7 @@ async def register(
 
     # enforce_detection=True raises an exception if no face is found
     try:
-        embedding_objs = _get_deepface().represent(
+        embedding_objs = get_deepface().represent(
             img_path=file_path,
             model_name="Facenet",
             enforce_detection=True,
