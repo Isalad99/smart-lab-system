@@ -10,22 +10,22 @@
 
 :root {
   /* --- Colors: Backgrounds & Cards --- */
-  --bg-color: #f4f7fc;       /* สีพื้นหลังหลักของเว็บ (เทาอมฟ้าสว่าง) */
-  --card-bg: #ffffff;        /* สีพื้นหลังของการ์ดและกล่องข้อมูล */
-  
+  --bg-color: #f4f7fc; /* สีพื้นหลังหลักของเว็บ (เทาอมฟ้าสว่าง) */
+  --card-bg: #ffffff; /* สีพื้นหลังของการ์ดและกล่องข้อมูล */
+
   /* --- Colors: Brand & Accents --- */
-  --primary-blue: #1877f2;   /* 🌟 เปลี่ยนเป็นสีฟ้าหลักสไตล์ Facebook */
-  --primary-blue-hover: #166fe5; 
-  
+  --primary-blue: #1877f2; /* 🌟 เปลี่ยนเป็นสีฟ้าหลักสไตล์ Facebook */
+  --primary-blue-hover: #166fe5;
+
   /* --- Colors: Text --- */
-  --text-dark: #1c1e21;      /* สีตัวหนังสือหลัก */
-  --text-gray: #6b7280;      /* สีตัวหนังสือรอง (เทา) */
-  
+  --text-dark: #1c1e21; /* สีตัวหนังสือหลัก */
+  --text-gray: #6b7280; /* สีตัวหนังสือรอง (เทา) */
+
   /* --- Colors: Borders --- */
-  --border-light: #e2e8f0;   /* สีเส้นขอบอ่อนๆ สำหรับคั่น Layout */
+  --border-light: #e2e8f0; /* สีเส้นขอบอ่อนๆ สำหรับคั่น Layout */
 
   /* --- Dimensions & Radius --- */
-  --border-radius-card: 24px;  /* ความโค้งของกล่อง/การ์ดใหญ่ */
+  --border-radius-card: 24px; /* ความโค้งของกล่อง/การ์ดใหญ่ */
   --border-radius-input: 12px; /* ความโค้งของปุ่มและช่องกรอกข้อมูล */
 }
 
@@ -39,7 +39,9 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   background-color: var(--bg-color);
   -webkit-font-smoothing: antialiased;
 }
@@ -150,12 +152,12 @@ body {
 .app-layout {
   display: flex;
   height: 100vh;
-  overflow: hidden; 
+  overflow: hidden;
   background-color: var(--bg-color);
 }
 
 .main-area {
-  flex: 1; 
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -163,7 +165,7 @@ body {
 
 /* --- 3.2 Sidebar Navigation --- */
 .sidebar {
-  width: 260px;
+  width: 240px;
   display: flex;
   flex-direction: column;
   background-color: #f0f7ff;
@@ -189,13 +191,16 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 8px 20px;
   border-radius: var(--border-radius-input);
   color: var(--text-gray);
   text-decoration: none;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .menu-item:hover {
@@ -206,7 +211,7 @@ body {
 .menu-item.active {
   background-color: #fff;
   color: var(--primary-blue);
-  font-weight: 600;
+  font-weight: 700;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -235,14 +240,14 @@ body {
   margin-left: 8px;
   border: none;
   background: transparent;
-  outline: none; 
+  outline: none;
 }
 
 /* --- 3.4 Main Content Area --- */
 .content-area {
   flex: 1;
   padding: 32px;
-  overflow-y: auto; 
+  overflow-y: auto;
 }
 
 /* ==========================================================================
@@ -260,13 +265,16 @@ body {
   border-radius: var(--border-radius-input);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .room-card:hover {
-  transform: translateY(-2px); 
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); 
-  border-color: #b5dbff; 
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #b5dbff;
 }
 
 /* ==========================================================================
@@ -274,19 +282,37 @@ body {
    ========================================================================== */
 
 @keyframes slideInLeft {
-  0% { opacity: 0; transform: translateX(-40px); }
-  100% { opacity: 1; transform: translateX(0); }
+  0% {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes slideInUp {
-  0% { opacity: 0; transform: translateY(40px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .animated-chip {
@@ -297,7 +323,7 @@ body {
 .animated-form-input:focus-within {
   transition: all 0.3s ease-in-out;
   transform: scale(1.005);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
 }
 
 .slide-in-left {
@@ -305,8 +331,8 @@ body {
 }
 
 .slide-in-up {
-  opacity: 0; 
-  animation: slideInUp 0.5s ease-out 0.1s forwards; 
+  opacity: 0;
+  animation: slideInUp 0.5s ease-out 0.1s forwards;
 }
 
 /* ==========================================================================
@@ -315,7 +341,6 @@ body {
 
 /* --- Tablet / หน้าจอขนาดกลาง (ต่ำกว่า 900px) --- */
 @media (max-width: 900px) {
-  
   /* Dashboard Sidebar */
   .sidebar {
     position: fixed;
@@ -326,7 +351,9 @@ body {
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
     transition: left 0.3s ease-in-out;
   }
-  .sidebar.open { left: 0; }
+  .sidebar.open {
+    left: 0;
+  }
   .sidebar-overlay {
     position: fixed;
     inset: 0;
@@ -334,10 +361,18 @@ body {
     background: rgba(0, 0, 0, 0.5);
   }
 
-  .top-header { padding: 0 16px; }
-  .search-bar { display: none; } 
-  .profile-text-container { display: none !important; } 
-  .content-area { padding: 16px; }
+  .top-header {
+    padding: 0 16px;
+  }
+  .search-bar {
+    display: none;
+  }
+  .profile-text-container {
+    display: none !important;
+  }
+  .content-area {
+    padding: 16px;
+  }
 
   /* 🌟 Login สลับมาเรียงแนวตั้งบน Tablet */
   .login-container {
@@ -365,15 +400,15 @@ body {
 /* --- Mobile / หน้าจอขนาดเล็ก (ต่ำกว่า 768px) --- */
 @media (max-width: 768px) {
   /* 🌟 ซ่อมส่วนที่ขาดหายไปจากโค้ดของคุณ */
-  .login-banner-title { 
+  .login-banner-title {
     font-size: 2rem; /* ย่อขนาดอักษรในมือถือ */
   }
-  
+
   .login-form-content {
     padding: 1rem;
   }
-  
-  .login-form-section { 
-    padding: 30px 20px; 
+
+  .login-form-section {
+    padding: 30px 20px;
   }
 }
