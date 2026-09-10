@@ -6,12 +6,12 @@
 
 ## ภาพรวมระบบ
 
-| ส่วน | หน้าที่ | ตำแหน่ง |
-| --- | --- | --- |
-| Backend | REST API และเชื่อมต่อ Supabase/PostgreSQL | `backend/` |
-| Frontend | เว็บไซต์สำหรับผู้ใช้และ Admin | `frontend/` |
+| ส่วน            | หน้าที่                                           | ตำแหน่ง            |
+| --------------- | ------------------------------------------------- | ------------------ |
+| Backend         | REST API และเชื่อมต่อ Supabase/PostgreSQL         | `backend/`         |
+| Frontend        | เว็บไซต์สำหรับผู้ใช้และ Admin                     | `frontend/`        |
 | Smart Lab Agent | ตรวจ process/active window และบันทึกการใช้โปรแกรม | `smart-lab-agent/` |
-| AI Gatekeeper | ตรวจใบหน้าและ liveness/anti-spoofing จากกล้อง | `gatekeeper/` |
+| AI Gatekeeper   | ตรวจใบหน้าและ liveness/anti-spoofing จากกล้อง     | `gatekeeper/`      |
 
 ### ขอบเขตปัจจุบันที่ควรรู้
 
