@@ -37,12 +37,14 @@ import {
   Delete,
   Edit,
   HowToReg,
+  Assessment,
   Block,
   Settings,
   Close,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/auth-context";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -63,6 +65,16 @@ const SIDE_MENU_ITEMS = [
     path: "/verify-users",
   },
   {
+    text: "User Points",
+    icon: <Assessment sx={{ fontSize: 20 }} />,
+    path: "/admin/points",
+  },
+  {
+    text: "Point Criteria",
+    icon: <Settings sx={{ fontSize: 20 }} />,
+    path: "/admin/points/policy",
+  },
+  {
     text: "Blacklist",
     icon: <Block sx={{ fontSize: 20 }} />,
     path: "/blacklist",
@@ -79,6 +91,7 @@ const EMPTY_FORM = { app_name: "", description: "" };
 export default function BlacklistManager() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   // --- User menu (avatar dropdown) ---
   const [anchorEl, setAnchorEl] = useState(null);
@@ -87,7 +100,8 @@ export default function BlacklistManager() {
   const handleCloseUserMenu = () => setAnchorEl(null);
   const handleLogout = () => {
     handleCloseUserMenu();
-    navigate("/login");
+    logout();
+    navigate("/");
   };
 
   const [blacklist, setBlacklist] = useState([]);

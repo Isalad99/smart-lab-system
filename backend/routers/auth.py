@@ -116,6 +116,7 @@ async def register(
         )
         db.add(new_user)
         db.flush()  # get new_user.id before inserting child records
+        db.add(models.UserPoints(user_id=new_user.id, points=100))
 
         domain = email.split("@")[-1]
         role_name = "student" if domain == "bumail.net" else "guest"

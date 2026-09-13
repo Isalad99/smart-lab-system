@@ -5,6 +5,13 @@ from urllib.parse import unquote
 
 import models, schemas
 from database import get_db
+from routers.points import (
+    apply_point_event,
+    get_booking_restriction,
+    is_admin_user,
+    mark_due_no_shows,
+)
+from routers.users import get_current_user
 
 router = APIRouter(tags=["Lab Management & Booking"])
 
@@ -129,6 +136,7 @@ def delete_schedule(schedule_id: int, db: Session = Depends(get_db)):
 @router.get("/bookings")
 def get_all_bookings(db: Session = Depends(get_db)):
     """Fetch all bookings for Admin Dashboard"""
+    mark_due_no_shows(db)
     bookings = db.query(models.Booking)\
         .options(
             joinedload(models.Booking.user),
@@ -140,6 +148,7 @@ def get_all_bookings(db: Session = Depends(get_db)):
 
 @router.get("/labs/{lab_id}/availability")
 def check_availability(lab_id: int, target_date: date, db: Session = Depends(get_db)):
+    mark_due_no_shows(db)
     lab = db.query(models.Lab).filter(models.Lab.id == lab_id).first()
     if not lab: raise HTTPException(status_code=404, detail="Lab not found.")
     max_seats = lab.capacity or 0 
@@ -159,7 +168,8 @@ def check_availability(lab_id: int, target_date: date, db: Session = Depends(get
 
     bookings = db.query(models.Booking).filter(
         models.Booking.lab_id == lab_id, 
-        models.Booking.booking_date == target_date
+        models.Booking.booking_date == target_date,
+        models.Booking.status.in_(["reserved", "attended", "completed"]),
     ).all()
 
     availability = {}
@@ -174,7 +184,12 @@ def check_availability(lab_id: int, target_date: date, db: Session = Depends(get
     return {"lab_id": lab_id, "date": target_date, "day": day_name, "total_capacity": max_seats, "slots": availability}
 
 @router.post("/bookings")
-def create_booking(booking: schemas.BookingCreate, db: Session = Depends(get_db)):
+def create_booking(
+    booking: schemas.BookingCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    mark_due_no_shows(db)
     now = datetime.now() 
     if booking.slot_number not in VALID_TIME_SLOTS: raise HTTPException(status_code=400, detail="Invalid slot number (must be 1-4).")
     
@@ -190,15 +205,30 @@ def create_booking(booking: schemas.BookingCreate, db: Session = Depends(get_db)
     if booking.booking_date > now.date() + timedelta(days=2):
         raise HTTPException(status_code=400, detail="Cannot book more than 2 days in advance.")
     
-    user = db.query(models.User).filter(models.User.email == booking.email).first()
+    if booking.email.lower() != current_user.email.lower() and not is_admin_user(current_user.id, db):
+        raise HTTPException(status_code=403, detail="Booking email does not match the signed-in user.")
+
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
     if not user: raise HTTPException(status_code=404, detail="User not found.")
+
+    restriction = get_booking_restriction(user.id, db)
+    if not restriction["booking_allowed"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "message": "Booking is unavailable because the account does not meet the point requirement.",
+                **restriction,
+            },
+        )
+
     lab = db.query(models.Lab).filter(models.Lab.id == booking.lab_id).first()
     if not lab or lab.status != "active": raise HTTPException(status_code=400, detail="Lab is currently closed.")
 
     user_duplicate = db.query(models.Booking).filter(
         models.Booking.user_id == user.id,
         models.Booking.booking_date == booking.booking_date,
-        models.Booking.start_time == slot_times["start"]
+        models.Booking.start_time == slot_times["start"],
+        models.Booking.status.in_(["reserved", "attended", "completed"]),
     ).first()
     
     if user_duplicate:
@@ -214,7 +244,8 @@ def create_booking(booking: schemas.BookingCreate, db: Session = Depends(get_db)
     existing_bookings = db.query(models.Booking).filter(
         models.Booking.lab_id == booking.lab_id, 
         models.Booking.booking_date == booking.booking_date,
-        models.Booking.start_time == slot_times["start"]
+        models.Booking.start_time == slot_times["start"],
+        models.Booking.status.in_(["reserved", "attended", "completed"]),
     ).all()
     
     seats_taken = sum([b.total_participants for b in existing_bookings])
@@ -224,15 +255,28 @@ def create_booking(booking: schemas.BookingCreate, db: Session = Depends(get_db)
     new_booking = models.Booking(
         lab_id=booking.lab_id, user_id=user.id, booking_date=booking.booking_date,
         start_time=slot_times["start"], end_time=slot_times["end"], purpose=booking.purpose,
-        total_participants=booking.total_participants
+        total_participants=booking.total_participants,
+        status="reserved",
     )
     db.add(new_booking)
     db.commit()
-    return {"message": f"Booking successful for {booking.total_participants} seat(s)."}
+    db.refresh(new_booking)
+    return {
+        "message": f"Booking successful for {booking.total_participants} seat(s).",
+        "booking_id": new_booking.id,
+    }
 
 @router.get("/bookings/user/{email}")
-def get_user_bookings(email: str, db: Session = Depends(get_db)):
+def get_user_bookings(
+    email: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    mark_due_no_shows(db)
     clean_email = unquote(email).strip()
+    if clean_email.lower() != current_user.email.lower() and not is_admin_user(current_user.id, db):
+        raise HTTPException(status_code=403, detail="You cannot view another user's bookings.")
+
     user = db.query(models.User).filter(models.User.email == clean_email).first()
     if not user:
         raise HTTPException(status_code=404, detail=f"User '{clean_email}' not found")
@@ -252,14 +296,29 @@ def get_user_bookings(email: str, db: Session = Depends(get_db)):
             "booking_date": booking.booking_date,
             "start_time": booking.start_time.strftime("%H:%M"),
             "end_time": booking.end_time.strftime("%H:%M"),
-            "purpose": booking.purpose
+            "purpose": booking.purpose,
+            "status": booking.status,
+            "checked_in_at": booking.checked_in_at,
+            "checked_out_at": booking.checked_out_at,
+            "cancelled_at": booking.cancelled_at,
+            "cancellation_reason": booking.cancellation_reason,
+            "no_show_at": booking.no_show_at,
         })
         
     return {"data": result}
 
 @router.delete("/bookings/{booking_id}")
-def cancel_booking(booking_id: int, email: str, db: Session = Depends(get_db)):
+def cancel_booking(
+    booking_id: int,
+    email: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    mark_due_no_shows(db)
     clean_email = unquote(email).strip()
+    if clean_email.lower() != current_user.email.lower() and not is_admin_user(current_user.id, db):
+        raise HTTPException(status_code=403, detail="You cannot cancel another user's booking.")
+
     user = db.query(models.User).filter(models.User.email == clean_email).first()
     if not user:
         raise HTTPException(status_code=404, detail=f"User '{clean_email}' not found")
@@ -271,7 +330,33 @@ def cancel_booking(booking_id: int, email: str, db: Session = Depends(get_db)):
     
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found or unauthorized")
-        
-    db.delete(booking)
+
+    if booking.status != "reserved":
+        raise HTTPException(status_code=409, detail=f"Booking cannot be cancelled from status '{booking.status}'.")
+
+    now = datetime.now()
+    booking_start = datetime.combine(booking.booking_date, booking.start_time)
+    if now >= booking_start:
+        raise HTTPException(status_code=409, detail="Booking has already started and cannot be cancelled.")
+
+    is_late_cancel = now < booking_start and booking_start - now < timedelta(hours=1)
+    booking.status = "cancelled"
+    booking.cancelled_at = now
+    booking.cancellation_reason = "user_cancelled"
+
+    point_result = None
+    if is_late_cancel:
+        point_result = apply_point_event(
+            booking.user_id,
+            "late_cancel",
+            db,
+            note=f"ยกเลิกการจองห้อง #{booking.id} ล่วงหน้าน้อยกว่า 1 ชั่วโมง",
+            event_id=f"booking:{booking.id}:late_cancel",
+            source_type="booking",
+            source_id=booking.id,
+            effective_at=now,
+            commit=False,
+        )
+
     db.commit()
-    return {"message": "Booking cancelled successfully."}
+    return {"message": "Booking cancelled successfully.", "points": point_result}

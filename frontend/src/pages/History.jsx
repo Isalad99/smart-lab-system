@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. IMPORTS & CONFIGURATION
 // ============================================================================
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -47,19 +47,14 @@ export default function History() {
   const [pastBookings, setPastBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate("/");
-      return;
-    }
-    fetchMyHistory();
-  }, [currentUser, navigate]);
-
-  const fetchMyHistory = async () => {
+  const fetchMyHistory = useCallback(async () => {
+    if (!currentUser) return;
     try {
       setLoading(true);
+      const token = localStorage.getItem("access_token");
       const response = await axios.get(
         `${API_URL}/bookings/user/${currentUser.email}`,
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       const allBookings = response.data.data;
 
@@ -78,12 +73,15 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  useEffect(() => {
+    if (!currentUser) {
+      navigate("/");
+      return;
+    }
+    fetchMyHistory();
+  }, [currentUser, fetchMyHistory, navigate]);
 
   // Add User Menu Popover States
   const [anchorEl, setAnchorEl] = useState(null);

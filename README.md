@@ -6,12 +6,12 @@
 
 ## ภาพรวมระบบ
 
-| ส่วน            | หน้าที่                                           | ตำแหน่ง            |
-| --------------- | ------------------------------------------------- | ------------------ |
-| Backend         | REST API และเชื่อมต่อ Supabase/PostgreSQL         | `backend/`         |
-| Frontend        | เว็บไซต์สำหรับผู้ใช้และ Admin                     | `frontend/`        |
+| ส่วน | หน้าที่ | ตำแหน่ง |
+| --- | --- | --- |
+| Backend | REST API และเชื่อมต่อ Supabase/PostgreSQL | `backend/` |
+| Frontend | เว็บไซต์สำหรับผู้ใช้และ Admin | `frontend/` |
 | Smart Lab Agent | ตรวจ process/active window และบันทึกการใช้โปรแกรม | `smart-lab-agent/` |
-| AI Gatekeeper   | ตรวจใบหน้าและ liveness/anti-spoofing จากกล้อง     | `gatekeeper/`      |
+| AI Gatekeeper | ตรวจใบหน้าและ liveness/anti-spoofing จากกล้อง | `gatekeeper/` |
 
 ### ขอบเขตปัจจุบันที่ควรรู้
 
@@ -66,8 +66,13 @@ Invoke-RestMethod http://127.0.0.1:8000/
 1. `backend/migrations/001_usage_violations.sql`
 2. `backend/migrations/002_session_device_identity.sql`
 3. `backend/migrations/003_agent_session_hardening.sql`
+4. `backend/migrations/004_agent_delivery_reliability.sql`
+5. `backend/migrations/005_point_system.sql`
+6. `backend/migrations/006_agent_policy_hardening.sql`
+7. `backend/migrations/007_point_requests.sql`
+8. `backend/migrations/008_point_policy.sql`
 
-Migration ชุดนี้เพิ่มตาราง violation, เพิ่ม device identity, ทำให้ lifecycle ของ Session ชัดเจน, เพิ่ม Heartbeat และ index/constraint ที่จำเป็น การใช้ `Base.metadata.create_all()` ไม่สามารถเพิ่ม column ให้ตารางเดิมได้ จึงต้องรัน SQL migration แยก
+Migration ชุดนี้เพิ่มตาราง violation, เพิ่ม device identity, ทำให้ lifecycle ของ Session ชัดเจน, เพิ่ม Heartbeat, รองรับการกู้ Session, ระบบแต้ม และ policy/evidence ของ Agent การใช้ `Base.metadata.create_all()` ไม่สามารถเพิ่ม column ให้ตารางเดิมได้ จึงต้องรัน SQL migration แยก
 
 ### 3. รัน Frontend
 
@@ -175,7 +180,19 @@ python agent.pyw
 - `SMART_LAB_API_URL`: override URL ของ Backend โดยไม่ต้องแก้ source
 - `SMART_LAB_CODE`: override รหัสห้อง
 - `SMART_LAB_AGENT_DEBUG=1`: ป้องกันการ logout Windows ระหว่างทดสอบ; ตั้งเป็น `0` ตอนใช้งานจริง
+- `SMART_LAB_SESSION_CLEANUP=1`: เปิดการ cleanup เมื่อรันจาก source; executable ที่ build แล้วเปิดเป็นค่าเริ่มต้น และตั้งเป็น `0` เพื่อปิดชั่วคราว
+- `SMART_LAB_AGENT_DATA_DIR`: โฟลเดอร์สำหรับ local SQLite outbox; ค่าเริ่มต้นคือ `%LOCALAPPDATA%\SmartLabAgent`
+- `SMART_LAB_POLICY_REFRESH_SECONDS`: ความถี่ refresh policy; ค่าเริ่มต้น 60 วินาที
 - `DEVICE_NAME` และ `DEVICE_MAC`: อ่านจากเครื่องและส่งตอนสร้าง session
+
+เมื่อจบ Session และเปิดใช้ Session Cleanup ระบบจะขอปิดโปรแกรมของ Windows user เดิมก่อน
+แล้วบังคับปิดเฉพาะโปรแกรมที่ยังค้างหลังรอ 10 วินาที โดยคง Agent และ Windows shell ไว้
+จากนั้นล้าง cookies, history, saved login และ cache ของ Chrome/Edge/Brave/Vivaldi/Opera/Firefox
+แต่เก็บ Bookmark และ Extension ไว้ และลบเฉพาะไฟล์ใหม่ที่ถูกสร้างใน Downloads ระหว่าง Session
+ข้อมูลใน Backend และรายการใน local outbox ที่ยังรอส่งจะไม่ถูกลบ
+
+ฟีเจอร์นี้อาจทำให้ข้อมูลที่ยังไม่ได้บันทึกในโปรแกรมอื่นหายได้ และ Browser Sync หรือ Windows
+Credential Manager อาจทำให้ข้อมูลบางอย่างกลับมาได้ จึงควรทดสอบบนเครื่อง Lab ก่อนเปิดใช้จริง
 
 ถ้าต้อง build executable ให้ติดตั้ง requirements-build.txt แล้วรัน pyinstaller --clean --noconfirm agent.spec
 
@@ -193,10 +210,12 @@ python agent.pyw
 ข้อมูลที่ Agent ส่งตามปกติ:
 
 - ตอน login: `POST /login`
-- ตอนเริ่ม session: `POST /agent/start-session`
+- ตอนเริ่ม session: `POST /agent/start-session` พร้อม `client_session_id` ที่เก็บไว้จนกว่า Backend จะตอบสำเร็จ
+- ตอนเริ่มและระหว่าง session: `GET /agent/policy` เพื่อโหลดกฎ Blacklist และ refresh ทุก 60 วินาที
 - ระหว่างใช้งาน: `POST /agent/heartbeat` ทุก 30 วินาที
 - ตอนจบ session: `POST /agent/log-usage` และ `POST /agent/end-session`
-- Agent ส่ง usage เป็น JSON list ที่มี `name`, `started_at`, `ended_at`, `duration`
+- Agent เก็บ usage และ violation ลง local SQLite outbox ก่อนส่ง โดยแต่ละ usage/violation มี `event_id`; ถ้าเน็ตหลุดจะ retry อัตโนมัติเมื่อ Heartbeat กลับมาสำเร็จ
+- Agent ส่ง usage เป็น JSON list ที่มี `event_id`, `name`, `started_at`, `ended_at`, `duration`
 
 ถ้าไม่มี Heartbeat เกิน 2 นาที Backend จะปิด Session เป็น `abandoned` ด้วย `end_reason = stale_cleanup` เมื่อมีการเริ่ม Session ใหม่
 
@@ -205,15 +224,44 @@ python agent.pyw
 1. เพิ่ม `notepad` ในหน้า Admin > Blacklist หรือในตาราง `blacklisted_apps`
 2. เปิด Agent และเริ่ม session ใหม่
 3. เปิด Notepad
-4. Agent จะตรวจทุกประมาณ 5 วินาทีและควรแสดง violation dialog พร้อมจบ session
+4. Agent จะตรวจ Process ใหม่และ Active Window ทุกประมาณ 5 วินาที ควรแสดง violation dialog พร้อมจบ session
 5. ตรวจว่ามีแถวใน `usage_violations`
 
 ข้อมูล violation ที่ Agent ส่ง:
 
 ```text
 POST /agent/log-violation
-session_id, program_name, reason, action_taken
+session_id, program_name, reason, action_taken,
+process_name, exe_path, window_title, detection_source
 ```
+
+กฎ Blacklist รองรับ `process_name`, `process_name_or_title`, `exe_path` และ `window_title` ผ่าน `match_type`/`match_value` ในตาราง `blacklisted_apps` ส่วน Backend จะตรวจซ้ำก่อนบันทึก violation เพื่อไม่รับรายการที่ไม่ตรงกับกฎที่เปิดใช้งานอยู่
+
+## หน้า Admin คะแนนผู้ใช้
+
+เปิดหน้า `/admin/points` จากเมนู `User Points` เพื่อดูคะแนนสะสม คะแนนรายวัน สถานะการจอง และสถานะ Ban ของผู้ใช้ทั้งหมด หน้าเว็บเรียก `GET /admin/points` ซึ่งอนุญาตเฉพาะบัญชีที่มี role `admin` และรองรับการค้นหา กรอง และเรียงลำดับข้อมูล
+
+เมื่อคะแนนเหลือไม่เกินค่า `warning_threshold` (ค่าเริ่มต้น 20) ระบบจะแสดงคำเตือนให้ผู้ใช้ทราบ หากคะแนนเป็น 0 ผู้ใช้จะกด `ติดต่อ Admin เพื่อขอเพิ่มคะแนน` ได้หนึ่งคำขอที่ยังรอผลต่อครั้ง โดยจำนวนแต้มอิงจาก `point_request_amount` คำขอจะแสดงในหน้า `/admin/points` เพื่อให้ Admin อนุมัติหรือไม่อนุมัติ หากอนุมัติ ระบบจะบันทึกประวัติใน `point_logs` ด้วยเหตุผล `admin_grant` บัญชีที่คะแนนเป็น 0 จะไม่รับ Daily +1 อัตโนมัติ เพื่อไม่ให้ข้ามขั้นตอนคำขอกู้คะแนน
+
+ในหน้า `/admin/points` มีปุ่ม `ลด 10 แต้ม (ทดสอบ)` และ `Reset เป็น 100 (ทดสอบ)` ต่อผู้ใช้สำหรับจำลอง flow คะแนนต่ำ/เป็นศูนย์ ปุ่มใช้ได้เฉพาะ Admin การ Reset จะทำได้ต่อเมื่อผู้ใช้มี point event จากการทดสอบล่าสุด, เพิ่มคะแนนกลับเป็น 100 เป็น log ใหม่ด้วยเหตุผล `admin_test_reset` และล้างเฉพาะ Ban ที่ถูกสร้างจากการหักคะแนนทดสอบ โดยไม่ลบประวัติเดิม หากมีคำขอเพิ่มคะแนนที่ยัง pending ต้องจัดการคำขอนั้นก่อน
+
+ฟังก์ชัน Test point และ endpoint ที่เกี่ยวข้องควรนำออกหรือปิดก่อนใช้งาน Production เพราะเปลี่ยนข้อมูลคะแนนจริงในฐานข้อมูล
+
+เปิดหน้า `/admin/points/policy` จากเมนู `Point Criteria` เพื่อปรับคะแนน Daily bonus, จบ Session, No-show, โปรแกรมต้องห้าม, ยกเลิกช้า, จำนวนแต้มที่คืนเมื่ออนุมัติคำขอ, เกณฑ์แจ้งเตือน, เกณฑ์จอง และจำนวนวัน Ban แต่ละระดับ ค่าใหม่ถูกใช้กับเหตุการณ์และการตรวจสอบสิทธิ์ครั้งถัดไป โดยไม่แก้ไขประวัติคะแนนเดิม ระบบจะบันทึกผู้แก้ไขและเวลาไว้ใน `point_policies`
+
+### Automated tests
+
+รันจากโฟลเดอร์โปรเจค:
+
+```powershell
+cd backend
+.\venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
+
+cd ..\frontend
+npm test
+```
+
+ชุดทดสอบ Backend ใช้ SQLite ชั่วคราวและไม่เชื่อมต่อหรือแก้ไข Supabase ส่วน Frontend ใช้ Node built-in test runner จึงไม่เพิ่ม dependency ใหม่
 
 ## Query ตรวจผลใน Supabase
 
@@ -279,6 +327,7 @@ limit 50;
 - Session ปกติจบด้วย `session_status = completed` และมี `end_reason`
 - Session ที่ Agent หยุดส่ง Heartbeat ถูกปิดเป็น `abandoned`
 - Agent บันทึกโปรแกรมอย่างน้อย 1 รายการและเชื่อมด้วย `lab_access_log_id`
+- Agent ไม่ทำ usage/violation หายเมื่อ Backend หยุดตอบชั่วคราว และ retry เดิมได้โดยไม่สร้างแถวซ้ำ
 - การเปิดโปรแกรมใน blacklist สร้าง violation และจบ session
 - Gatekeeper โหลด model และแยก real face/spoof ได้ในสภาพแสงที่เหมาะสม
 - การทดสอบ local ใช้ `DEBUG_MODE = True` เท่านั้น และห้ามนำ password, API key หรือ Database URL จริงใส่ใน README/Git

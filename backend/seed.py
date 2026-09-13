@@ -29,10 +29,30 @@ ADMIN_PASSWORD = os.getenv("SEED_ADMIN_PASSWORD")
 TEST_STUDENT_PASSWORD = os.getenv("SEED_TEST_STUDENT_PASSWORD")
 
 DEFAULT_BLACKLIST = [
-    {"app_name": "BitTorrent",    "description": "ห้ามใช้โปรแกรมโหลดไฟล์ละเมิดลิขสิทธิ์"},
-    {"app_name": "CheatEngine",   "description": "ห้ามใช้โปรแกรมดัดแปลงหน่วยความจำ"},
-    {"app_name": "GenshinImpact", "description": "ไม่อนุญาตให้เล่นเกม Genshin ขณะใช้งานห้องแล็บ"},
-    {"app_name": "StarRail",      "description": "ไม่อนุญาตให้ขึ้นรถไฟ Star Rail ในเวลาเรียนครับกัปตัน!"},
+    {
+        "app_name": "BitTorrent",
+        "description": "ห้ามใช้โปรแกรมโหลดไฟล์ละเมิดลิขสิทธิ์",
+        "match_type": "process_name_or_title",
+        "match_value": "bittorrent",
+    },
+    {
+        "app_name": "CheatEngine",
+        "description": "ห้ามใช้โปรแกรมดัดแปลงหน่วยความจำ",
+        "match_type": "process_name_or_title",
+        "match_value": "cheatengine",
+    },
+    {
+        "app_name": "GenshinImpact",
+        "description": "ไม่อนุญาตให้เล่นเกม Genshin ขณะใช้งานห้องแล็บ",
+        "match_type": "process_name_or_title",
+        "match_value": "genshinimpact",
+    },
+    {
+        "app_name": "StarRail",
+        "description": "ไม่อนุญาตให้ขึ้นรถไฟ Star Rail ในเวลาเรียนครับกัปตัน!",
+        "match_type": "process_name_or_title",
+        "match_value": "starrail",
+    },
 ]
 
 
@@ -126,6 +146,14 @@ def seed_users(db: Session) -> None:
             is_active=True,
         ))
         print(f"  + student record: {TEST_STUDENT_ID}")
+
+    for seeded_user in (admin_user, test_student):
+        points_record = db.query(models.UserPoints).filter(
+            models.UserPoints.user_id == seeded_user.id,
+        ).first()
+        if not points_record:
+            db.add(models.UserPoints(user_id=seeded_user.id, points=100))
+            print(f"  + initial points: {seeded_user.email}")
 
 
 def seed_data() -> None:

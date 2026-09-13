@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. IMPORTS & CONFIGURATION
 // ============================================================================
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import {
   Button,
   Popover,
   Divider,
+  Chip,
 } from "@mui/material";
 import {
   Notifications,
@@ -55,19 +56,14 @@ export default function Reserved() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate("/");
-      return;
-    }
-    fetchMyBookings();
-  }, [currentUser, navigate]);
-
-  const fetchMyBookings = async () => {
+  const fetchMyBookings = useCallback(async () => {
+    if (!currentUser) return;
     try {
       setLoading(true);
+      const token = localStorage.getItem("access_token");
       const response = await axios.get(
         `${API_URL}/bookings/user/${currentUser.email}`,
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       const allBookings = response.data.data;
 
@@ -86,25 +82,31 @@ export default function Reserved() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate("/");
+      return;
+    }
+    fetchMyBookings();
+  }, [currentUser, fetchMyBookings, navigate]);
 
   const handleConfirmCancel = async () => {
     if (!bookingToCancel) return;
     try {
       await axios.delete(`${API_URL}/bookings/${bookingToCancel}`, {
         params: { email: currentUser.email },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
       });
       setCancelDialogOpen(false);
       setBookingToCancel(null);
       fetchMyBookings();
-    } catch (error) {
+    } catch {
       alert("Failed to cancel booking.");
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
   };
 
   const handleOpenCancelDialog = (bookingId) => {
@@ -531,22 +533,41 @@ export default function Reserved() {
                           </TableCell>
                           <TableCell sx={{ color: "#475569" }}>
                             {row.start_time} - {row.end_time}
+                            <Typography variant="caption" display="block" color="#94a3b8">
+                              {!row.status || row.status === "reserved"
+                                ? "รอยืนยันการเข้าใช้งาน"
+                                : row.status === "attended"
+                                  ? "กำลังใช้งาน"
+                                  : row.status === "completed"
+                                    ? "ใช้งานเสร็จแล้ว"
+                                    : row.status === "no_show"
+                                      ? "ไม่มาตามการจอง"
+                                      : "ยกเลิกแล้ว"}
+                            </Typography>
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenCancelDialog(row.id)}
-                              sx={{
-                                color: "#ef4444",
-                                transition: "0.2s",
-                                "&:hover": {
-                                  color: "#dc2626",
-                                  transform: "scale(1.1)",
-                                },
-                              }}
-                            >
-                              <CancelIcon />
-                            </IconButton>
+                            {!row.status || row.status === "reserved" ? (
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenCancelDialog(row.id)}
+                                sx={{
+                                  color: "#ef4444",
+                                  transition: "0.2s",
+                                  "&:hover": {
+                                    color: "#dc2626",
+                                    transform: "scale(1.1)",
+                                  },
+                                }}
+                              >
+                                <CancelIcon />
+                              </IconButton>
+                            ) : (
+                              <Chip
+                                label={row.status === "no_show" ? "No-show" : "Closed"}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}

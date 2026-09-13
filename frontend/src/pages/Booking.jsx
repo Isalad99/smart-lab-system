@@ -14,9 +14,11 @@ import {
   Slide,
   Fade,
   Chip,
+  Alert,
   Dialog,
   DialogContent,
   Popover,
+  Badge,
 } from "@mui/material";
 import {
   Search,
@@ -37,6 +39,7 @@ import {
   CheckCircle,
   Settings,
   Close,
+  MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -83,6 +86,10 @@ export default function Booking() {
   // Data States
   const [labs, setLabs] = useState([]);
   const [availability, setAvailability] = useState(null);
+  const [pointStatus, setPointStatus] = useState(null);
+  const [pointsLoading, setPointsLoading] = useState(false);
+  const [pointsError, setPointsError] = useState("");
+  const [pointRequestLoading, setPointRequestLoading] = useState(false);
 
   // Selection States
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -94,15 +101,10 @@ export default function Booking() {
   // 4. LIFECYCLE & API CALLS
   // ============================================================================
 
-  // Fetch labs on component mount
-  useEffect(() => {
-    fetchLabs();
-  }, []);
-
   /**
    * Fetches all available lab rooms from the backend.
    */
-  const fetchLabs = async () => {
+  const fetchLabs = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/labs`);
       setLabs(response.data.data);
@@ -112,7 +114,49 @@ export default function Booking() {
         "Error: Unable to fetch lab data. Please check backend connection.",
       );
     }
-  };
+  }, []);
+
+  // Fetch labs on component mount
+  useEffect(() => {
+    // This effect intentionally loads remote data and updates state asynchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLabs();
+  }, [fetchLabs]);
+
+  useEffect(() => {
+    if (!currentUser?.email) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPointStatus(null);
+      setPointsError("");
+      return undefined;
+    }
+
+    let cancelled = false;
+    const token = localStorage.getItem("access_token");
+    setPointsLoading(true);
+    setPointsError("");
+
+    axios
+      .get(`${API_URL}/users/me/points`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        if (!cancelled) setPointStatus(response.data);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[API Error] Failed to fetch point status:", error);
+        setPointStatus(null);
+        setPointsError("ไม่สามารถตรวจสอบคะแนนได้ จึงยังไม่อนุญาตให้จอง");
+      })
+      .finally(() => {
+        if (!cancelled) setPointsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.email]);
 
   /**
    * Fetches availability for a specific lab room on a given date.
@@ -181,46 +225,38 @@ export default function Booking() {
    * Validates if the selected time slot can be booked based on the 2-hour advance rule.
    * @returns {"valid" | "passed" | "too_close"}
    */
-  const checkSlotTimeValidity = useCallback(
-    (slotNumber) => {
-      if (!selectedDate) return "valid";
+  const checkSlotTimeValidity = (slotNumber) => {
+    if (!selectedDate) return "valid";
 
-      const selectedDateObj = new Date(currentYear, currentMonth, selectedDate);
-      selectedDateObj.setHours(0, 0, 0, 0);
+    const selectedDateObj = new Date(currentYear, currentMonth, selectedDate);
+    selectedDateObj.setHours(0, 0, 0, 0);
 
-      const todayMidnight = new Date();
-      todayMidnight.setHours(0, 0, 0, 0);
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
 
-      if (selectedDateObj.getTime() > todayMidnight.getTime()) return "valid";
+    if (selectedDateObj.getTime() > todayMidnight.getTime()) return "valid";
 
-      const slotTimeObj = new Date(currentYear, currentMonth, selectedDate);
-      slotTimeObj.setHours(
-        SLOT_TIMES[slotNumber].hours,
-        SLOT_TIMES[slotNumber].minutes,
-        0,
-        0,
-      );
+    const slotTimeObj = new Date(currentYear, currentMonth, selectedDate);
+    slotTimeObj.setHours(
+      SLOT_TIMES[slotNumber].hours,
+      SLOT_TIMES[slotNumber].minutes,
+      0,
+      0,
+    );
 
-      const now = new Date();
+    const now = new Date();
 
-      if (slotTimeObj.getTime() <= now.getTime()) return "passed";
+    if (slotTimeObj.getTime() <= now.getTime()) return "passed";
 
-      const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      if (slotTimeObj.getTime() < twoHoursFromNow.getTime()) return "too_close";
+    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    if (slotTimeObj.getTime() < twoHoursFromNow.getTime()) return "too_close";
 
-      return "valid";
-    },
-    [selectedDate, currentYear, currentMonth],
-  );
+    return "valid";
+  };
 
   // ============================================================================
   // 6. ACTION HANDLERS
   // ============================================================================
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
 
   /**
    * Clears the current selection states during the booking process.
@@ -282,12 +318,54 @@ export default function Booking() {
         total_participants: 1,
       };
 
-      await axios.post(`${API_URL}/bookings`, payload);
+      const token = localStorage.getItem("access_token");
+      await axios.post(`${API_URL}/bookings`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setSuccessDialogOpen(true);
     } catch (error) {
+      const detail = error.response?.data?.detail;
       const errMsg =
-        error.response?.data?.detail || "Failed to confirm booking";
+        (typeof detail === "string" ? detail : detail?.message) ||
+        "Failed to confirm booking";
       alert(`Booking Failed: ${errMsg}`);
+    }
+  };
+
+  const handlePointRequest = async () => {
+    const token = localStorage.getItem("access_token");
+    if (
+      !token ||
+      Number(pointStatus?.points) !== 0 ||
+      pointStatus?.point_request?.status === "pending"
+    ) {
+      return;
+    }
+
+    try {
+      setPointRequestLoading(true);
+      const response = await axios.post(
+        `${API_URL}/users/me/points/request`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const request = response.data?.point_request;
+      if (request) {
+        setPointStatus((currentStatus) => ({
+          ...currentStatus,
+          point_request: request,
+          can_request_points: false,
+        }));
+      }
+    } catch (requestError) {
+      const detail = requestError.response?.data?.detail;
+      const message =
+        typeof detail === "string"
+          ? detail
+          : "ไม่สามารถส่งคำขอเพิ่มคะแนนได้ กรุณาลองใหม่อีกครั้ง";
+      alert(message);
+    } finally {
+      setPointRequestLoading(false);
     }
   };
 
@@ -308,6 +386,16 @@ export default function Booking() {
     logout();
     navigate("/");
   };
+
+  // Add Notification Popover States (UI only - no data yet)
+  const [notifAnchorEl, setNotifAnchorEl] = useState(null);
+  const openNotifMenu = Boolean(notifAnchorEl);
+
+  const handleNotifClick = (e) => setNotifAnchorEl(e.currentTarget);
+  const handleCloseNotifMenu = () => setNotifAnchorEl(null);
+
+  // ยังไม่ต่อกับ backend จริง - รอเชื่อมข้อมูลแจ้งเตือนทีหลัง
+  const notifications = [];
 
   // ============================================================================
   // 7. RENDER HELPERS
@@ -413,9 +501,145 @@ export default function Booking() {
             <IconButton sx={{ display: { xs: "block", md: "none" } }}>
               <Search sx={{ color: "#111827" }} />
             </IconButton>
-            <IconButton>
-              <Notifications sx={{ color: "#111827" }} />
+            <IconButton onClick={handleNotifClick}>
+              <Badge
+                variant="dot"
+                color="error"
+                overlap="circular"
+                invisible={!notifications.some((n) => n.unread)}
+              >
+                <Notifications sx={{ color: "#111827" }} />
+              </Badge>
             </IconButton>
+
+            {/* Notification Popover (UI only, ยังไม่มีข้อมูลจริง) */}
+            <Popover
+              anchorEl={notifAnchorEl}
+              open={openNotifMenu}
+              onClose={handleCloseNotifMenu}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              PaperProps={{
+                sx: {
+                  mt: 1.5,
+                  width: 380,
+                  maxWidth: "92vw",
+                  maxHeight: 520,
+                  borderRadius: 3,
+                  bgcolor: "#eff6ff",
+                  color: "#0f172a",
+                  boxShadow: "0 20px 45px rgba(15,23,42,0.35)",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                },
+              }}
+            >
+              {/* Header */}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 2.5,
+                  py: 2,
+                  flexShrink: 0,
+                }}
+              >
+                <Typography fontSize="16px" fontWeight="700">
+                  การแจ้งเตือน
+                </Typography>
+              </Box>
+
+              {/* Scrollable notification list */}
+              <Box sx={{ overflowY: "auto", px: 1, pb: 1 }}>
+                {notifications.length === 0 ? (
+                  <Box sx={{ py: 4, textAlign: "center" }}>
+                    <Typography fontSize="13px" sx={{ color: "#64748b" }}>
+                      ยังไม่มีการแจ้งเตือน
+                    </Typography>
+                  </Box>
+                ) : (
+                  notifications.map((n) => (
+                    <Box
+                      key={n.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: 2,
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "rgba(0, 0, 0, 0.04)" },
+                      }}
+                    >
+                      {/* Unread dot */}
+                      <Box sx={{ pt: 1.2 }}>
+                        {n.unread ? (
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              bgcolor: "#2563eb",
+                            }}
+                          />
+                        ) : (
+                          <Box sx={{ width: 8, height: 8 }} />
+                        )}
+                      </Box>
+
+                      <Avatar
+                        sx={{
+                          bgcolor: n.color,
+                          width: 36,
+                          height: 36,
+                          fontSize: 14,
+                        }}
+                      >
+                        {n.title.charAt(0)}
+                      </Avatar>
+
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          fontSize="13.5px"
+                          fontWeight="600"
+                          sx={{
+                            color: "#1e293b",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {n.title}
+                        </Typography>
+                        <Typography
+                          fontSize="12px"
+                          sx={{ color: "#475569", mt: 0.3 }}
+                        >
+                          {n.subtitle}
+                        </Typography>
+                        <Typography
+                          fontSize="12px"
+                          sx={{ color: "#64748b", mt: 0.3 }}
+                        >
+                          {n.time}
+                        </Typography>
+                      </Box>
+
+                      <IconButton
+                        size="small"
+                        sx={{ color: "#94a3b8", mt: 0.5 }}
+                      >
+                        <MoreVertIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </Popover>
 
             {/* Profile Section */}
             {currentUser ? (
@@ -663,11 +887,18 @@ export default function Booking() {
                 <Grid container spacing={3}>
                   {filteredLabs.length > 0 ? (
                     filteredLabs.map((room) => (
-                      <Grid item xs={12} sm={6} lg={4} key={room.id}>
+                      <Grid
+                        item
+                        xs={12}
+                        sm={6}
+                        lg={4}
+                        key={room.id}
+                        sx={{ minWidth: 0 }}
+                      >
                         <Paper
                           elevation={0}
                           onClick={() => handleSelectRoom(room)}
-                          className="room-card"
+                          className="room-card lab-card"
                           sx={{
                             opacity: room.status === "active" ? 1 : 0.6,
                             pointerEvents:
@@ -691,6 +922,7 @@ export default function Booking() {
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center",
+                                minWidth: 0,
                               }}
                             >
                               <Typography
@@ -726,6 +958,8 @@ export default function Booking() {
                             <Typography
                               variant="body2"
                               color="#64748b"
+                              className="lab-card-name"
+                              title={room.name}
                               sx={{ mt: 1 }}
                             >
                               {room.name}
@@ -736,6 +970,7 @@ export default function Booking() {
                                 display: "flex",
                                 justifyContent: "space-between",
                                 color: "#64748b",
+                                minWidth: 0,
                               }}
                             >
                               <Box
@@ -743,6 +978,9 @@ export default function Booking() {
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 1,
+                                  minWidth: 0,
+                                  overflowWrap: "anywhere",
+                                  textAlign: "right",
                                 }}
                               >
                                 <PeopleAlt fontSize="small" />
@@ -1222,6 +1460,58 @@ export default function Booking() {
                         </Typography>
                       </Box>
 
+                      {currentUser && pointsError ? (
+                        <Alert severity="error">{pointsError}</Alert>
+                      ) : null}
+                      {currentUser && pointStatus?.booking_allowed === false ? (
+                        <Alert
+                          severity={
+                            Number(pointStatus.points) === 0
+                              ? "error"
+                              : "warning"
+                          }
+                        >
+                          <Box>
+                            <Typography>
+                              จองห้องไม่ได้: {pointStatus.booking_block_reason}
+                            </Typography>
+                            {Number(pointStatus.points) === 0 &&
+                              (pointStatus.point_request?.status ===
+                              "pending" ? (
+                                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                  ส่งคำขอเพิ่ม{" "}
+                                  {pointStatus.point_request.requested_points ||
+                                    pointStatus.point_request_amount ||
+                                    10}{" "}
+                                  คะแนนแล้ว กรุณารอ Admin พิจารณา
+                                </Typography>
+                              ) : (
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  startIcon={<SupportAgent />}
+                                  onClick={handlePointRequest}
+                                  disabled={
+                                    pointRequestLoading ||
+                                    pointStatus.can_request_points === false
+                                  }
+                                  sx={{
+                                    mt: 1.25,
+                                    borderColor: "currentColor",
+                                    color: "inherit",
+                                    textTransform: "none",
+                                    fontWeight: "700",
+                                  }}
+                                >
+                                  {pointRequestLoading
+                                    ? "กำลังส่งคำขอ..."
+                                    : `ติดต่อ Admin เพื่อขอเพิ่ม ${pointStatus.point_request_amount || 10} คะแนน`}
+                                </Button>
+                              ))}
+                          </Box>
+                        </Alert>
+                      ) : null}
+
                       <Paper
                         elevation={0}
                         sx={{
@@ -1262,6 +1552,12 @@ export default function Booking() {
                               ? handleConfirmBooking
                               : () => navigate("/")
                           }
+                          disabled={Boolean(
+                            currentUser &&
+                            (pointsLoading ||
+                              pointsError ||
+                              !pointStatus?.booking_allowed),
+                          )}
                           sx={{
                             bgcolor: "#0284c7",
                             color: "white",

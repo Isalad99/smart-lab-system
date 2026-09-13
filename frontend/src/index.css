@@ -254,6 +254,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-bottom: 16px;
   background: #fff;
   border: 1px solid #f0f5fa;
@@ -261,6 +264,25 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+/* Keep long lab names inside a stable card height and grid column. */
+.lab-card {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.lab-card-name {
+  display: -webkit-box;
+  min-width: 0;
+  height: 42px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 21px;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .room-card:hover {

@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. IMPORTS & CONFIGURATION
 // ============================================================================
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -48,12 +48,14 @@ import {
   Delete,
   Edit,
   HowToReg,
+  Assessment,
   Block,
   Settings,
   Close,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/auth-context";
 
 // นำเข้า MUI DatePicker
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -81,6 +83,16 @@ const SIDE_MENU_ITEMS = [
     text: "Verify Users",
     icon: <HowToReg sx={{ fontSize: 20 }} />,
     path: "/verify-users",
+  },
+  {
+    text: "User Points",
+    icon: <Assessment sx={{ fontSize: 20 }} />,
+    path: "/admin/points",
+  },
+  {
+    text: "Point Criteria",
+    icon: <Settings sx={{ fontSize: 20 }} />,
+    path: "/admin/points/policy",
   },
   {
     text: "Blacklist",
@@ -117,6 +129,7 @@ const SLOT_OPTIONS = [
 export default function ManageLabs() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   // --- User menu (avatar dropdown) ---
   const [anchorEl, setAnchorEl] = useState(null);
@@ -125,7 +138,8 @@ export default function ManageLabs() {
   const handleCloseUserMenu = () => setAnchorEl(null);
   const handleLogout = () => {
     handleCloseUserMenu();
-    navigate("/login");
+    logout();
+    navigate("/");
   };
 
   // ============================================================================
@@ -168,24 +182,27 @@ export default function ManageLabs() {
   // ============================================================================
   // 5. LIFECYCLE & API CALLS
   // ============================================================================
-  useEffect(() => {
-    fetchLabs();
-  }, []);
-
-  const fetchLabs = async () => {
+  const fetchLabs = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/labs`);
       setLabs(response.data.data);
-      if (activeLab) {
-        const updatedLab = response.data.data.find(
-          (l) => l.id === activeLab.id,
+      setActiveLab((currentLab) => {
+        if (!currentLab) return currentLab;
+        return (
+          response.data.data.find((lab) => lab.id === currentLab.id) ||
+          currentLab
         );
-        if (updatedLab) setActiveLab(updatedLab);
-      }
+      });
     } catch (error) {
       console.error("[API Error] Fetch labs failed:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // This effect intentionally loads remote data and updates state asynchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLabs();
+  }, [fetchLabs]);
 
   const fetchSchedules = async (labId) => {
     try {
@@ -355,7 +372,7 @@ export default function ManageLabs() {
     try {
       await axios.delete(`${API_URL}/admin/schedules/${scheduleId}`);
       fetchSchedules(activeLab.id);
-    } catch (error) {
+    } catch {
       alert("Delete failed");
     }
   };
@@ -729,10 +746,18 @@ export default function ManageLabs() {
 
                 <Grid container spacing={4}>
                   {labs.map((lab) => (
-                    <Grid item xs={12} sm={6} lg={4} key={lab.id}>
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      lg={4}
+                      key={lab.id}
+                      sx={{ minWidth: 0 }}
+                    >
                       <Paper
                         elevation={0}
                         onClick={() => handleSelectLab(lab)}
+                        className="lab-card"
                         sx={{
                           display: "flex",
                           flexDirection: "column",
@@ -769,18 +794,25 @@ export default function ManageLabs() {
                             }}
                           />
                         </Box>
-                        <Box sx={{ p: 4, flexGrow: 1 }}>
+                        <Box sx={{ p: 4, flexGrow: 1, minWidth: 0 }}>
                           <Box
                             sx={{
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "center",
+                              minWidth: 0,
                             }}
                           >
                             <Typography
                               variant="h5"
                               fontWeight="800"
                               color="#1e293b"
+                              sx={{
+                                minWidth: 0,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
                             >
                               {lab.code}
                             </Typography>
@@ -799,6 +831,7 @@ export default function ManageLabs() {
                                     : "#ef4444",
                                 fontWeight: "800",
                                 fontSize: "12px",
+                                flexShrink: 0,
                               }}
                               size="small"
                             />
@@ -807,6 +840,8 @@ export default function ManageLabs() {
                             variant="body2"
                             color="#64748b"
                             fontWeight="500"
+                            className="lab-card-name"
+                            title={lab.name}
                             sx={{ mt: 1 }}
                           >
                             {lab.name}
@@ -819,6 +854,7 @@ export default function ManageLabs() {
                               color: "#94a3b8",
                               fontWeight: "600",
                               fontSize: "14px",
+                              minWidth: 0,
                             }}
                           >
                             <Box
@@ -826,6 +862,7 @@ export default function ManageLabs() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
+                                minWidth: 0,
                               }}
                             >
                               <PeopleAlt
@@ -839,6 +876,9 @@ export default function ManageLabs() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
+                                minWidth: 0,
+                                overflowWrap: "anywhere",
+                                textAlign: "right",
                               }}
                             >
                               📍 {lab.location || "-"}

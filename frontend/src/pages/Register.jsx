@@ -212,7 +212,7 @@ export default function Register() {
 
   // dev bypass button ที่แสดงใต้ทุก step (เฉพาะ non-production)
   const DevBypass = ({ onClick, label }) =>
-    process.env.NODE_ENV !== 'production' ? (
+    import.meta.env.DEV ? (
       <Box sx={{ mt: 3, pt: 2, borderTop: '1px dashed #f59e0b' }}>
         <Button fullWidth variant="outlined" size="small" onClick={onClick}
           sx={{ color: '#d97706', borderColor: '#f59e0b', textTransform: 'none', fontWeight: 'bold', borderRadius: 2 }}>

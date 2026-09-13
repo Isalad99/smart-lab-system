@@ -31,6 +31,7 @@ import {
   PendingActions,
   SupportAgent,
   HowToReg,
+  Assessment,
   Block,
   Settings,
   Close,
@@ -38,6 +39,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/auth-context";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -56,6 +58,16 @@ const SIDE_MENU_ITEMS = [
     text: "Verify Users",
     icon: <HowToReg sx={{ fontSize: 20 }} />,
     path: "/verify-users",
+  },
+  {
+    text: "User Points",
+    icon: <Assessment sx={{ fontSize: 20 }} />,
+    path: "/admin/points",
+  },
+  {
+    text: "Point Criteria",
+    icon: <Settings sx={{ fontSize: 20 }} />,
+    path: "/admin/points/policy",
   },
   {
     text: "Blacklist",
@@ -84,6 +96,7 @@ const stringToColor = (string) => {
 export default function Admin() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   // --- User menu (avatar dropdown) ---
   const [anchorEl, setAnchorEl] = useState(null);
@@ -92,7 +105,8 @@ export default function Admin() {
   const handleCloseUserMenu = () => setAnchorEl(null);
   const handleLogout = () => {
     handleCloseUserMenu();
-    navigate("/login");
+    logout();
+    navigate("/");
   };
 
   const [loading, setLoading] = useState(true);
