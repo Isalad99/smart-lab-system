@@ -350,31 +350,6 @@ export default function Reserved() {
                   {/* Menu Action List */}
                   <Box sx={{ px: 1, py: 1 }}>
                     <Box
-                      onClick={() => {
-                        handleCloseUserMenu();
-                        navigate("/profile");
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        px: 1.5,
-                        py: 1,
-                        borderRadius: 2,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "#f8fafc" },
-                      }}
-                    >
-                      <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                      <Typography
-                        fontSize="13px"
-                        fontWeight="600"
-                        color="#1e293b"
-                      >
-                        {t("common.settings")}
-                      </Typography>
-                    </Box>
-                    <Box
                       onClick={handleLogoutAction}
                       sx={{
                         display: "flex",
@@ -469,129 +444,131 @@ export default function Reserved() {
 
               {bookings.length > 0 ? (
                 <>
-                <TableContainer>
-                  <Table sx={{ minWidth: 600 }}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#0f172a",
-                          }}
-                        >
-                          #ID
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#0f172a",
-                          }}
-                        >
-                          {t("user.room")}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#0f172a",
-                          }}
-                        >
-                          {t("common.date")}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#0f172a",
-                          }}
-                        >
-                          {t("common.time")}
-                        </TableCell>
-                        <TableCell
-                          sx={{ borderBottom: "1px solid #e2e8f0" }}
-                        ></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {bookings.map((row) => (
-                        <TableRow
-                          key={row.id}
-                          sx={{
-                            "&:last-child td, &:last-child th": { border: 0 },
-                          }}
-                        >
-                          <TableCell sx={{ color: "#64748b" }}>
-                            {row.id.toString().padStart(4, "0")}
+                  <TableContainer>
+                    <Table sx={{ minWidth: 600 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#0f172a",
+                            }}
+                          >
+                            #ID
                           </TableCell>
-                          <TableCell sx={{ color: "#475569" }}>
-                            {row.lab_code}
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#0f172a",
+                            }}
+                          >
+                            {t("user.room")}
                           </TableCell>
-                          <TableCell sx={{ color: "#475569" }}>
-                            {formatDate(row.booking_date, t("common.locale"))}
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#0f172a",
+                            }}
+                          >
+                            {t("common.date")}
                           </TableCell>
-                          <TableCell sx={{ color: "#475569" }}>
-                            {row.start_time} - {row.end_time}
-                            <Typography
-                              variant="caption"
-                              display="block"
-                              color="#94a3b8"
-                            >
-                              {!row.status || row.status === "reserved"
-                                ? t("user.pendingCheckIn")
-                                : row.status === "attended"
-                                  ? t("user.inUse")
-                                  : row.status === "completed"
-                                    ? t("user.sessionCompleted")
-                                    : row.status === "no_show"
-                                      ? t("user.noShow")
-                                      : t("user.cancelled")}
-                            </Typography>
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#0f172a",
+                            }}
+                          >
+                            {t("common.time")}
                           </TableCell>
-                          <TableCell align="right">
-                            {!row.status || row.status === "reserved" ? (
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenCancelDialog(row.id)}
-                                sx={{
-                                  color: "#ef4444",
-                                  transition: "0.2s",
-                                  "&:hover": {
-                                    color: "#dc2626",
-                                    transform: "scale(1.1)",
-                                  },
-                                }}
-                              >
-                                <CancelIcon />
-                              </IconButton>
-                            ) : (
-                              <Chip
-                                label={
-                                  row.status === "no_show"
-                                    ? t("user.noShow")
-                                    : t("user.sessionCompleted")
-                                }
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </TableCell>
+                          <TableCell
+                            sx={{ borderBottom: "1px solid #e2e8f0" }}
+                          ></TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                {total > PAGE_SIZE && (
-                  <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
-                    <Pagination
-                      count={Math.max(1, Math.ceil(total / PAGE_SIZE))}
-                      page={page}
-                      onChange={(_, nextPage) => setPage(nextPage)}
-                      color="primary"
-                    />
-                  </Box>
-                )}
+                      </TableHead>
+                      <TableBody>
+                        {bookings.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            sx={{
+                              "&:last-child td, &:last-child th": { border: 0 },
+                            }}
+                          >
+                            <TableCell sx={{ color: "#64748b" }}>
+                              {row.id.toString().padStart(4, "0")}
+                            </TableCell>
+                            <TableCell sx={{ color: "#475569" }}>
+                              {row.lab_code}
+                            </TableCell>
+                            <TableCell sx={{ color: "#475569" }}>
+                              {formatDate(row.booking_date, t("common.locale"))}
+                            </TableCell>
+                            <TableCell sx={{ color: "#475569" }}>
+                              {row.start_time} - {row.end_time}
+                              <Typography
+                                variant="caption"
+                                display="block"
+                                color="#94a3b8"
+                              >
+                                {!row.status || row.status === "reserved"
+                                  ? t("user.pendingCheckIn")
+                                  : row.status === "attended"
+                                    ? t("user.inUse")
+                                    : row.status === "completed"
+                                      ? t("user.sessionCompleted")
+                                      : row.status === "no_show"
+                                        ? t("user.noShow")
+                                        : t("user.cancelled")}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              {!row.status || row.status === "reserved" ? (
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenCancelDialog(row.id)}
+                                  sx={{
+                                    color: "#ef4444",
+                                    transition: "0.2s",
+                                    "&:hover": {
+                                      color: "#dc2626",
+                                      transform: "scale(1.1)",
+                                    },
+                                  }}
+                                >
+                                  <CancelIcon />
+                                </IconButton>
+                              ) : (
+                                <Chip
+                                  label={
+                                    row.status === "no_show"
+                                      ? t("user.noShow")
+                                      : t("user.sessionCompleted")
+                                  }
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  {total > PAGE_SIZE && (
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", pt: 3 }}
+                    >
+                      <Pagination
+                        count={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                        page={page}
+                        onChange={(_, nextPage) => setPage(nextPage)}
+                        color="primary"
+                      />
+                    </Box>
+                  )}
                 </>
               ) : (
                 <Box

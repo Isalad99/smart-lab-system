@@ -103,16 +103,31 @@ const getRoleLabel = (role, t) =>
 const getRoleColor = (role) =>
   ({
     admin: { bgcolor: "var(--role-admin-bg)", color: "var(--role-admin-text)" },
-    student: { bgcolor: "var(--role-student-bg)", color: "var(--role-student-text)" },
+    student: {
+      bgcolor: "var(--role-student-bg)",
+      color: "var(--role-student-text)",
+    },
     guest: { bgcolor: "var(--role-guest-bg)", color: "var(--role-guest-text)" },
-  })[role] || { bgcolor: "var(--role-guest-bg)", color: "var(--role-guest-text)" };
+  })[role] || {
+    bgcolor: "var(--role-guest-bg)",
+    color: "var(--role-guest-text)",
+  };
 
 const buildSummary = (userRows, warningThreshold, pendingPointRequests = 0) => {
-  const scores = userRows.map((user) => Math.max(0, Math.min(100, Number(user.points) || 0)));
+  const scores = userRows.map((user) =>
+    Math.max(0, Math.min(100, Number(user.points) || 0)),
+  );
   return {
     total_users: userRows.length,
-    average_points: scores.length ? Math.round((scores.reduce((total, score) => total + score, 0) / scores.length) * 10) / 10 : 0,
-    low_point_users: userRows.filter((user) => Number(user.points) <= warningThreshold).length,
+    average_points: scores.length
+      ? Math.round(
+          (scores.reduce((total, score) => total + score, 0) / scores.length) *
+            10,
+        ) / 10
+      : 0,
+    low_point_users: userRows.filter(
+      (user) => Number(user.points) <= warningThreshold,
+    ).length,
     banned_users: userRows.filter((user) => user.is_banned).length,
     booking_allowed: userRows.filter((user) => user.booking_allowed).length,
     zero_point_users: userRows.filter((user) => Number(user.points) === 0)
@@ -130,7 +145,9 @@ export default function AdminPoints() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
-  const [warningThreshold, setWarningThreshold] = useState(DEFAULT_WARNING_THRESHOLD);
+  const [warningThreshold, setWarningThreshold] = useState(
+    DEFAULT_WARNING_THRESHOLD,
+  );
   const [scoreDate, setScoreDate] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -173,13 +190,26 @@ export default function AdminPoints() {
         },
       });
       const payload = response.data || {};
-      const nextWarningThreshold = Number.isFinite(Number(payload.points_warning_threshold))
+      const nextWarningThreshold = Number.isFinite(
+        Number(payload.points_warning_threshold),
+      )
         ? Number(payload.points_warning_threshold)
         : DEFAULT_WARNING_THRESHOLD;
-      const userRows = (Array.isArray(payload.data) ? payload.data : []).filter((user) => user.role !== "admin");
-      const pendingPointRequests = Array.isArray(payload.point_requests) ? payload.point_requests : [];
+      const userRows = (Array.isArray(payload.data) ? payload.data : []).filter(
+        (user) => user.role !== "admin",
+      );
+      const pendingPointRequests = Array.isArray(payload.point_requests)
+        ? payload.point_requests
+        : [];
       setRows(userRows);
-      setSummary(payload.summary || buildSummary(userRows, nextWarningThreshold, pendingPointRequests.length));
+      setSummary(
+        payload.summary ||
+          buildSummary(
+            userRows,
+            nextWarningThreshold,
+            pendingPointRequests.length,
+          ),
+      );
       setWarningThreshold(nextWarningThreshold);
       setScoreDate(payload.score_date || null);
       setPointRequests(pendingPointRequests);
@@ -241,9 +271,7 @@ export default function AdminPoints() {
     } catch (requestError) {
       const detail = requestError.response?.data?.detail;
       setDetailError(
-        typeof detail === "string"
-          ? detail
-          : t("admin.loadUserDetailFailed"),
+        typeof detail === "string" ? detail : t("admin.loadUserDetailFailed"),
       );
     } finally {
       setDetailLoading(false);
@@ -434,7 +462,10 @@ export default function AdminPoints() {
           zIndex: 10,
         }}
       >
-        <Box className="sidebar-logo" sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          className="sidebar-logo"
+          sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}
+        >
           <Box
             className="admin-brand-mark"
             sx={{
@@ -528,7 +559,11 @@ export default function AdminPoints() {
                 >
                   {t("common.systemAdmin")}
                 </Typography>
-                <Typography variant="caption" fontWeight="500" color="var(--text-muted)">
+                <Typography
+                  variant="caption"
+                  fontWeight="500"
+                  color="var(--text-muted)"
+                >
                   {t("common.administrator")}
                 </Typography>
               </Box>
@@ -537,7 +572,14 @@ export default function AdminPoints() {
                 aria-label={t("common.openMenu")}
                 sx={{ p: 0.8, "&:hover": { bgcolor: "var(--surface-subtle)" } }}
               >
-                <Avatar sx={{ bgcolor: "var(--text-dark)", color: "var(--brand-contrast)", width: 36, height: 36 }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "var(--text-dark)",
+                    color: "var(--brand-contrast)",
+                    width: 36,
+                    height: 36,
+                  }}
+                >
                   <Person sx={{ fontSize: 20 }} />
                 </Avatar>
               </IconButton>
@@ -550,13 +592,15 @@ export default function AdminPoints() {
                 PaperProps={{
                   sx: {
                     mt: 1.5,
-                    width: 280,
-                    borderRadius: 4,
+                    width: 320,
+                    borderRadius: 5,
                     boxShadow: "0 20px 45px rgba(15,23,42,0.16)",
-                    border: "1px solid var(--border-light)",
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
                   },
                 }}
               >
+                {/* Header: อีเมล + ปุ่มปิด */}
                 <Box
                   sx={{
                     display: "flex",
@@ -566,7 +610,12 @@ export default function AdminPoints() {
                     pt: 1.5,
                   }}
                 >
-                  <Typography fontSize="13px" fontWeight="500" color="var(--text-muted)">
+                  <Typography
+                    fontSize="13px"
+                    fontWeight="500"
+                    color="#64748b"
+                    sx={{ pl: 0.5 }}
+                  >
                     admin@smartlab.ac.th
                   </Typography>
                   <IconButton
@@ -574,31 +623,72 @@ export default function AdminPoints() {
                     onClick={() => setAnchorEl(null)}
                     aria-label={t("common.closeMenu")}
                   >
-                    <Close sx={{ fontSize: 18, color: "var(--text-muted)" }} />
+                    <Close sx={{ fontSize: 18, color: "#64748b" }} />
                   </IconButton>
                 </Box>
-                <Box sx={{ px: 2, py: 1.5 }}>
-                  <Button
-                    fullWidth
+
+                {/* Avatar + ชื่อผู้ใช้ */}
+                <Box sx={{ textAlign: "center", px: 3, pb: 3, pt: 0.5 }}>
+                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: "#0f172a",
+                        width: 84,
+                        height: 84,
+                        mx: "auto",
+                        boxShadow:
+                          "0 0 0 4px #eff6ff, 0 8px 20px rgba(59,130,246,0.25)",
+                      }}
+                    >
+                      <Person sx={{ fontSize: 40 }} />
+                    </Avatar>
+                  </Box>
+
+                  <Typography
+                    sx={{ mt: 1.5, color: "#1e293b" }}
+                    fontWeight="600"
+                    fontSize="18px"
+                  >
+                    {t("common.systemAdmin")}
+                  </Typography>
+                </Box>
+
+                <Divider />
+
+                {/* ปุ่ม Log out */}
+                <Box sx={{ px: 1, py: 1 }}>
+                  <Box
                     onClick={handleLogout}
-                    startIcon={<Logout />}
                     sx={{
-                      justifyContent: "flex-start",
-                      color: "var(--danger-color)",
-                      fontWeight: "600",
-                      textTransform: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      px: 1.5,
+                      py: 1,
                       borderRadius: 2,
+                      cursor: "pointer",
+                      "&:hover": { bgcolor: "#fef2f2" },
                     }}
                   >
-                    {t("common.logout")}
-                  </Button>
+                    <Logout sx={{ fontSize: 20, color: "#ef4444" }} />
+                    <Typography
+                      fontSize="13px"
+                      fontWeight="600"
+                      color="#ef4444"
+                    >
+                      {t("common.logout")}
+                    </Typography>
+                  </Box>
                 </Box>
               </Popover>
             </Box>
           </Box>
         </Box>
 
-        <Box className="content-area admin-content-area page-content" sx={{ p: { xs: 3, md: 6 }, flex: 1 }}>
+        <Box
+          className="content-area admin-content-area page-content"
+          sx={{ p: { xs: 3, md: 6 }, flex: 1 }}
+        >
           <Box
             className="page-header"
             sx={{
@@ -619,11 +709,21 @@ export default function AdminPoints() {
               >
                 {t("admin.userPointsHeading")}
               </Typography>
-              <Typography variant="body2" color="var(--text-gray)" sx={{ mt: 0.75 }}>
+              <Typography
+                variant="body2"
+                color="var(--text-gray)"
+                sx={{ mt: 0.75 }}
+              >
                 {t("admin.pointsPageDescription")}
               </Typography>
-              <Typography variant="caption" color="var(--text-muted)" sx={{ display: "block", mt: 0.5 }}>
-                {t("admin.pointSummaryDate")} {formatDate(scoreDate, t("common.locale"))} · {t("admin.bookingDependsOnBan")}
+              <Typography
+                variant="caption"
+                color="var(--text-muted)"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                {t("admin.pointSummaryDate")}{" "}
+                {formatDate(scoreDate, t("common.locale"))} ·{" "}
+                {t("admin.bookingDependsOnBan")}
               </Typography>
             </Box>
             <Button
@@ -656,8 +756,13 @@ export default function AdminPoints() {
               sx={{ mb: 3, borderRadius: 3, alignItems: "flex-start" }}
             >
               <Box sx={{ width: "100%" }}>
-                <Typography fontWeight="700" color="var(--warning-color)" sx={{ mb: 1 }}>
-                  {t("admin.pointRequests")} {pointRequests.length} {t("admin.pointRequestsCount")}
+                <Typography
+                  fontWeight="700"
+                  color="var(--warning-color)"
+                  sx={{ mb: 1 }}
+                >
+                  {t("admin.pointRequests")} {pointRequests.length}{" "}
+                  {t("admin.pointRequestsCount")}
                 </Typography>
                 <Box
                   sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}
@@ -682,15 +787,23 @@ export default function AdminPoints() {
                           fontWeight="700"
                           color="var(--text-dark)"
                         >
-                          {request.name || `${t("common.user")} #${request.user_id}`} · {t("admin.requestPoints")} {request.requested_points || 10} {t("common.points")}
+                          {request.name ||
+                            `${t("common.user")} #${request.user_id}`}{" "}
+                          · {t("admin.requestPoints")}{" "}
+                          {request.requested_points || 10} {t("common.points")}
                         </Typography>
                         <Typography
                           variant="caption"
                           color="var(--text-gray)"
                           sx={{ overflowWrap: "anywhere" }}
                         >
-                          {request.email || `${t("common.userId")} #${request.user_id}`} ·
-                          {t("admin.requestSentAt")} {formatDateTime(request.created_at, t("common.locale"))}
+                          {request.email ||
+                            `${t("common.userId")} #${request.user_id}`}{" "}
+                          ·{t("admin.requestSentAt")}{" "}
+                          {formatDateTime(
+                            request.created_at,
+                            t("common.locale"),
+                          )}
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
@@ -710,7 +823,8 @@ export default function AdminPoints() {
                             boxShadow: "none",
                           }}
                         >
-                          {t("common.approved")} +{request.requested_points || 10}
+                          {t("common.approved")} +
+                          {request.requested_points || 10}
                         </Button>
                         <Button
                           size="small"
@@ -777,10 +891,18 @@ export default function AdminPoints() {
                   >
                     {card.label}
                   </Typography>
-                  <Typography variant="h5" fontWeight="700" color="var(--text-dark)">
+                  <Typography
+                    variant="h5"
+                    fontWeight="700"
+                    color="var(--text-dark)"
+                  >
                     {card.value}
                   </Typography>
-                  <Typography variant="caption" color="var(--text-muted)" noWrap>
+                  <Typography
+                    variant="caption"
+                    color="var(--text-muted)"
+                    noWrap
+                  >
                     {card.helper}
                   </Typography>
                 </Box>
@@ -829,8 +951,14 @@ export default function AdminPoints() {
                   inputProps={{ "aria-label": t("admin.searchUsers") }}
                 />
               </Box>
-              <FormControl className="admin-filter-control" size="small" sx={{ minWidth: 170 }}>
-                <InputLabel id="points-filter-label">{t("admin.pointFilter")}</InputLabel>
+              <FormControl
+                className="admin-filter-control"
+                size="small"
+                sx={{ minWidth: 170 }}
+              >
+                <InputLabel id="points-filter-label">
+                  {t("admin.pointFilter")}
+                </InputLabel>
                 <Select
                   labelId="points-filter-label"
                   value={filter}
@@ -843,11 +971,19 @@ export default function AdminPoints() {
                   <MenuItem value="all">{t("admin.allUsersFilter")}</MenuItem>
                   <MenuItem value="low">{t("admin.lowPoints")}</MenuItem>
                   <MenuItem value="banned">{t("admin.bookingBanned")}</MenuItem>
-                  <MenuItem value="allowed">{t("admin.bookingAllowed")}</MenuItem>
+                  <MenuItem value="allowed">
+                    {t("admin.bookingAllowed")}
+                  </MenuItem>
                 </Select>
               </FormControl>
-              <FormControl className="admin-filter-control" size="small" sx={{ minWidth: 170 }}>
-                <InputLabel id="points-sort-label">{t("admin.pointSort")}</InputLabel>
+              <FormControl
+                className="admin-filter-control"
+                size="small"
+                sx={{ minWidth: 170 }}
+              >
+                <InputLabel id="points-sort-label">
+                  {t("admin.pointSort")}
+                </InputLabel>
                 <Select
                   labelId="points-sort-label"
                   value={sortBy}
@@ -857,8 +993,12 @@ export default function AdminPoints() {
                     setPage(1);
                   }}
                 >
-                  <MenuItem value="pointsAsc">{t("admin.pointsAscending")}</MenuItem>
-                  <MenuItem value="pointsDesc">{t("admin.pointsDescending")}</MenuItem>
+                  <MenuItem value="pointsAsc">
+                    {t("admin.pointsAscending")}
+                  </MenuItem>
+                  <MenuItem value="pointsDesc">
+                    {t("admin.pointsDescending")}
+                  </MenuItem>
                   <MenuItem value="name">{t("admin.userNameSort")}</MenuItem>
                 </Select>
               </FormControl>
@@ -893,12 +1033,20 @@ export default function AdminPoints() {
                   <TableHead>
                     <TableRow sx={{ bgcolor: "var(--surface-subtle)" }}>
                       <TableCell
-                        sx={{ color: "var(--text-gray)", fontWeight: "700", py: 2 }}
+                        sx={{
+                          color: "var(--text-gray)",
+                          fontWeight: "700",
+                          py: 2,
+                        }}
                       >
                         {t("common.user")}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "var(--text-gray)", fontWeight: "700", py: 2 }}
+                        sx={{
+                          color: "var(--text-gray)",
+                          fontWeight: "700",
+                          py: 2,
+                        }}
                       >
                         {t("common.role")}
                       </TableCell>
@@ -923,12 +1071,20 @@ export default function AdminPoints() {
                         {t("admin.dailyPoints")}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "var(--text-gray)", fontWeight: "700", py: 2 }}
+                        sx={{
+                          color: "var(--text-gray)",
+                          fontWeight: "700",
+                          py: 2,
+                        }}
                       >
                         {t("admin.bookingRights")}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "var(--text-gray)", fontWeight: "700", py: 2 }}
+                        sx={{
+                          color: "var(--text-gray)",
+                          fontWeight: "700",
+                          py: 2,
+                        }}
                       >
                         {t("admin.lastUpdated")}
                       </TableCell>
@@ -957,9 +1113,18 @@ export default function AdminPoints() {
                       </TableRow>
                     ) : (
                       rows.map((user) => {
-                        const points = Math.max(0, Math.min(100, Number(user.points) || 0));
-                        const dailyScore = Math.max(0, Math.min(100, Number(user.daily_score) || 0));
-                        const scoreColor = getScoreColor(points, warningThreshold);
+                        const points = Math.max(
+                          0,
+                          Math.min(100, Number(user.points) || 0),
+                        );
+                        const dailyScore = Math.max(
+                          0,
+                          Math.min(100, Number(user.daily_score) || 0),
+                        );
+                        const scoreColor = getScoreColor(
+                          points,
+                          warningThreshold,
+                        );
                         const roleColor = getRoleColor(user.role);
                         const testActionBusy =
                           testDeductionId === user.user_id ||
@@ -969,7 +1134,9 @@ export default function AdminPoints() {
                             key={user.user_id}
                             hover
                             sx={{
-                              "& td": { borderBottom: "1px solid var(--border-light)" },
+                              "& td": {
+                                borderBottom: "1px solid var(--border-light)",
+                              },
                               "&:hover": { bgcolor: "var(--surface-subtle)" },
                             }}
                           >
@@ -1010,7 +1177,10 @@ export default function AdminPoints() {
                                   >
                                     {user.email}
                                   </Typography>
-                                  <Typography variant="caption" color="var(--text-muted)">
+                                  <Typography
+                                    variant="caption"
+                                    color="var(--text-muted)"
+                                  >
                                     {t("common.userId")} #{user.user_id}
                                   </Typography>
                                 </Box>
@@ -1044,8 +1214,12 @@ export default function AdminPoints() {
                                   >
                                     {points}/100
                                   </Typography>
-                                  <Typography variant="caption" color="var(--text-muted)">
-                                    {t("admin.warningWhenAtMost")} {warningThreshold}
+                                  <Typography
+                                    variant="caption"
+                                    color="var(--text-muted)"
+                                  >
+                                    {t("admin.warningWhenAtMost")}{" "}
+                                    {warningThreshold}
                                   </Typography>
                                 </Box>
                                 <LinearProgress
@@ -1066,7 +1240,10 @@ export default function AdminPoints() {
                             </TableCell>
                             <TableCell>
                               <Box sx={{ minWidth: 115 }}>
-                                <Typography fontWeight="700" color="var(--text-dark)">
+                                <Typography
+                                  fontWeight="700"
+                                  color="var(--text-dark)"
+                                >
                                   {dailyScore}/100
                                 </Typography>
                                 <LinearProgress
@@ -1130,7 +1307,11 @@ export default function AdminPoints() {
                                     fontWeight="600"
                                     className="theme-colored"
                                   >
-                                    {t("common.bannedUntil")} {formatDate(user.ban_until, t("common.locale"))}
+                                    {t("common.bannedUntil")}{" "}
+                                    {formatDate(
+                                      user.ban_until,
+                                      t("common.locale"),
+                                    )}
                                   </Typography>
                                 )}
                               </Box>
@@ -1142,7 +1323,10 @@ export default function AdminPoints() {
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              {formatDateTime(user.updated_at, t("common.locale"))}
+                              {formatDateTime(
+                                user.updated_at,
+                                t("common.locale"),
+                              )}
                             </TableCell>
                             <TableCell>
                               <Box
@@ -1246,9 +1430,14 @@ export default function AdminPoints() {
                   flexWrap: "wrap",
                 }}
               >
-                <Typography variant="caption" color="var(--text-gray)" fontWeight="500">
-                   {t("admin.showing")} {rows.length} {t("admin.of")} {total} {t("admin.users")}
-                 </Typography>
+                <Typography
+                  variant="caption"
+                  color="var(--text-gray)"
+                  fontWeight="500"
+                >
+                  {t("admin.showing")} {rows.length} {t("admin.of")} {total}{" "}
+                  {t("admin.users")}
+                </Typography>
                 <Typography variant="caption" color="var(--text-muted)">
                   {t("admin.maxPointsHint")}
                 </Typography>

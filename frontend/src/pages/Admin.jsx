@@ -90,7 +90,10 @@ export default function Admin() {
     try {
       setLoading(true);
       const requestConfig = authConfig();
-      const dashboardRes = await axios.get(`${API_URL}/admin/dashboard`, requestConfig);
+      const dashboardRes = await axios.get(
+        `${API_URL}/admin/dashboard`,
+        requestConfig,
+      );
       const dashboard = dashboardRes.data?.data || {};
 
       setRecentReservations(dashboard.recent_reservations || []);
@@ -113,7 +116,12 @@ export default function Admin() {
       c: "#3b82f6",
       i: <Person />,
     },
-    { label: t("admin.activeUsers"), v: stats.activeUsers, c: "#10b981", i: <Group /> },
+    {
+      label: t("admin.activeUsers"),
+      v: stats.activeUsers,
+      c: "#10b981",
+      i: <Group />,
+    },
     {
       label: t("admin.pendingUsersCard"),
       v: stats.pendingApprovals,
@@ -121,7 +129,12 @@ export default function Admin() {
       i: <PendingActions />,
       path: "/verify-users",
     },
-    { label: t("admin.supportTickets"), v: 0, c: "#ef4444", i: <SupportAgent /> },
+    {
+      label: t("admin.supportTickets"),
+      v: 0,
+      c: "#ef4444",
+      i: <SupportAgent />,
+    },
   ];
 
   return (
@@ -149,7 +162,10 @@ export default function Admin() {
           zIndex: 10,
         }}
       >
-        <Box className="sidebar-logo" sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          className="sidebar-logo"
+          sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}
+        >
           <Box
             className="admin-brand-mark"
             sx={{
@@ -340,56 +356,12 @@ export default function Admin() {
                   >
                     {t("common.systemAdmin")}
                   </Typography>
-
-                  <Button
-                    variant="outlined"
-                    onClick={handleCloseUserMenu}
-                    sx={{
-                      mt: 2,
-                      borderRadius: 20,
-                      textTransform: "none",
-                      fontWeight: "600",
-                      fontSize: "13px",
-                      px: 2.5,
-                      py: 0.6,
-                      color: "#3b82f6",
-                      borderColor: "#cbd8f5",
-                      "&:hover": {
-                        borderColor: "#3b82f6",
-                        bgcolor: "#eff6ff",
-                      },
-                    }}
-                  >
-                    {t("common.manageAccount")}
-                  </Button>
                 </Box>
 
                 <Divider />
 
                 {/* settings + sign out */}
                 <Box sx={{ px: 1, py: 1 }}>
-                  <Box
-                    onClick={handleCloseUserMenu}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 2,
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: "#f8fafc" },
-                    }}
-                  >
-                    <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                    <Typography
-                      fontSize="13px"
-                      fontWeight="600"
-                      color="#1e293b"
-                    >
-                      {t("common.settings")}
-                    </Typography>
-                  </Box>
                   <Box
                     onClick={handleLogout}
                     sx={{
@@ -418,7 +390,10 @@ export default function Admin() {
           </Box>
         </Box>
 
-        <Box className="content-area admin-content-area page-content" sx={{ p: 6, overflowY: "auto" }}>
+        <Box
+          className="content-area admin-content-area page-content"
+          sx={{ p: 6, overflowY: "auto" }}
+        >
           {loading ? (
             <Box
               sx={{
@@ -512,7 +487,12 @@ export default function Admin() {
                       <Table>
                         <TableHead>
                           <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                            {[t("common.user"), t("user.room"), t("common.date"), t("common.time")].map((h) => (
+                            {[
+                              t("common.user"),
+                              t("user.room"),
+                              t("common.date"),
+                              t("common.time"),
+                            ].map((h) => (
                               <TableCell
                                 key={h}
                                 sx={{
@@ -576,13 +556,19 @@ export default function Admin() {
                                   <TableCell
                                     sx={{ color: "#475569", fontWeight: "500" }}
                                   >
-                                    <span className="font-baseline-text">{labCode}</span>
+                                    <span className="font-baseline-text">
+                                      {labCode}
+                                    </span>
                                   </TableCell>
                                   <TableCell
                                     sx={{ color: "#475569", fontWeight: "500" }}
                                   >
                                     <span className="font-baseline-text">
-                                      {formatDate(row.booking_date, t("common.locale"), { fallback: "-" })}
+                                      {formatDate(
+                                        row.booking_date,
+                                        t("common.locale"),
+                                        { fallback: "-" },
+                                      )}
                                     </span>
                                   </TableCell>
                                   <TableCell

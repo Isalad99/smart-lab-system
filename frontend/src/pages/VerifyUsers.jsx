@@ -78,14 +78,15 @@ export default function VerifyUsers() {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.get(`${API_URL}/admin/users/pending`, authConfig());
+      const response = await axios.get(
+        `${API_URL}/admin/users/pending`,
+        authConfig(),
+      );
       setPendingUsers(response.data?.data || []);
     } catch (requestError) {
       const detail = requestError.response?.data?.detail;
       setError(
-        typeof detail === "string"
-          ? detail
-          : t("admin.pendingUsersLoadFailed"),
+        typeof detail === "string" ? detail : t("admin.pendingUsersLoadFailed"),
       );
     } finally {
       setLoading(false);
@@ -108,7 +109,11 @@ export default function VerifyUsers() {
     try {
       setProcessingId(userId);
       setError("");
-      await axios.put(`${API_URL}/admin/users/${userId}/verify`, { action }, authConfig());
+      await axios.put(
+        `${API_URL}/admin/users/${userId}/verify`,
+        { action },
+        authConfig(),
+      );
       await fetchPendingUsers();
     } catch (requestError) {
       const detail = requestError.response?.data?.detail;
@@ -163,7 +168,10 @@ export default function VerifyUsers() {
           zIndex: 10,
         }}
       >
-        <Box className="sidebar-logo" sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          className="sidebar-logo"
+          sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}
+        >
           <Box
             className="admin-brand-mark"
             sx={{
@@ -316,13 +324,15 @@ export default function VerifyUsers() {
                 PaperProps={{
                   sx: {
                     mt: 1.5,
-                    width: 280,
-                    borderRadius: 4,
+                    width: 320,
+                    borderRadius: 5,
                     boxShadow: "0 20px 45px rgba(15,23,42,0.16)",
                     border: "1px solid #e2e8f0",
+                    overflow: "hidden",
                   },
                 }}
               >
+                {/* Header: อีเมล + ปุ่มปิด */}
                 <Box
                   sx={{
                     display: "flex",
@@ -332,7 +342,12 @@ export default function VerifyUsers() {
                     pt: 1.5,
                   }}
                 >
-                  <Typography fontSize="13px" fontWeight="500" color="#64748b">
+                  <Typography
+                    fontSize="13px"
+                    fontWeight="500"
+                    color="#64748b"
+                    sx={{ pl: 0.5 }}
+                  >
                     admin@smartlab.ac.th
                   </Typography>
                   <IconButton
@@ -343,21 +358,59 @@ export default function VerifyUsers() {
                     <Close sx={{ fontSize: 18, color: "#64748b" }} />
                   </IconButton>
                 </Box>
-                <Box sx={{ px: 2, py: 1.5 }}>
-                  <Button
-                    fullWidth
+
+                {/* Avatar + ชื่อผู้ใช้ */}
+                <Box sx={{ textAlign: "center", px: 3, pb: 3, pt: 0.5 }}>
+                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: "#0f172a",
+                        width: 84,
+                        height: 84,
+                        mx: "auto",
+                        boxShadow:
+                          "0 0 0 4px #eff6ff, 0 8px 20px rgba(59,130,246,0.25)",
+                      }}
+                    >
+                      <Person sx={{ fontSize: 40 }} />
+                    </Avatar>
+                  </Box>
+
+                  <Typography
+                    sx={{ mt: 1.5, color: "#1e293b" }}
+                    fontWeight="600"
+                    fontSize="18px"
+                  >
+                    {t("common.systemAdmin")}
+                  </Typography>
+                </Box>
+
+                <Divider />
+
+                {/* ปุ่ม Log out */}
+                <Box sx={{ px: 1, py: 1 }}>
+                  <Box
                     onClick={handleLogout}
-                    startIcon={<Logout />}
                     sx={{
-                      justifyContent: "flex-start",
-                      color: "#ef4444",
-                      fontWeight: "600",
-                      textTransform: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      px: 1.5,
+                      py: 1,
                       borderRadius: 2,
+                      cursor: "pointer",
+                      "&:hover": { bgcolor: "#fef2f2" },
                     }}
                   >
-                    {t("common.logout")}
-                  </Button>
+                    <Logout sx={{ fontSize: 20, color: "#ef4444" }} />
+                    <Typography
+                      fontSize="13px"
+                      fontWeight="600"
+                      color="#ef4444"
+                    >
+                      {t("common.logout")}
+                    </Typography>
+                  </Box>
                 </Box>
               </Popover>
             </Box>
@@ -365,7 +418,10 @@ export default function VerifyUsers() {
         </Box>
 
         {/* CONTENT */}
-        <Box className="content-area admin-content-area page-content" sx={{ p: { xs: 3, md: 6 }, flex: 1 }}>
+        <Box
+          className="content-area admin-content-area page-content"
+          sx={{ p: { xs: 3, md: 6 }, flex: 1 }}
+        >
           <Fade in timeout={400}>
             <Box>
               <Box
@@ -659,7 +715,9 @@ export default function VerifyUsers() {
                                 boxShadow: "none",
                               }}
                             >
-                              {isProcessing ? t("admin.saving") : t("admin.approve")}
+                              {isProcessing
+                                ? t("admin.saving")
+                                : t("admin.approve")}
                             </Button>
                           </Box>
                         </Box>

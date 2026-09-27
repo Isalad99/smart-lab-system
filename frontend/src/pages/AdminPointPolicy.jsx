@@ -243,9 +243,7 @@ export default function AdminPointPolicy() {
       const data = response.data?.data || policy;
       setPolicy(normalizePointPolicy(data));
       setLastUpdated(data.updated_at || new Date().toISOString());
-      setSuccess(
-        t("admin.policySaved"),
-      );
+      setSuccess(t("admin.policySaved"));
     } catch (requestError) {
       setError(getErrorMessage(requestError, t("admin.savePolicyFailed")));
       setSuccess("");
@@ -291,7 +289,10 @@ export default function AdminPointPolicy() {
           zIndex: 10,
         }}
       >
-        <Box className="sidebar-logo" sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          className="sidebar-logo"
+          sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}
+        >
           <Box
             className="admin-brand-mark"
             sx={{
@@ -404,18 +405,18 @@ export default function AdminPointPolicy() {
                 onClose={() => setAnchorEl(null)}
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 transformOrigin={{ vertical: "top", horizontal: "right" }}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      mt: 1.5,
-                      width: 280,
-                      borderRadius: 4,
-                      boxShadow: "0 20px 45px rgba(15,23,42,0.16)",
-                      border: "1px solid #e2e8f0",
-                    },
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    width: 320,
+                    borderRadius: 5,
+                    boxShadow: "0 20px 45px rgba(15,23,42,0.16)",
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
                   },
                 }}
               >
+                {/* Header: อีเมล + ปุ่มปิด */}
                 <Box
                   sx={{
                     display: "flex",
@@ -425,7 +426,12 @@ export default function AdminPointPolicy() {
                     pt: 1.5,
                   }}
                 >
-                  <Typography fontSize="13px" fontWeight="500" color="#64748b">
+                  <Typography
+                    fontSize="13px"
+                    fontWeight="500"
+                    color="#64748b"
+                    sx={{ pl: 0.5 }}
+                  >
                     admin@smartlab.ac.th
                   </Typography>
                   <IconButton
@@ -436,28 +442,69 @@ export default function AdminPointPolicy() {
                     <Close sx={{ fontSize: 18, color: "#64748b" }} />
                   </IconButton>
                 </Box>
-                <Box sx={{ px: 2, py: 1.5 }}>
-                  <Button
-                    fullWidth
+
+                {/* Avatar + ชื่อผู้ใช้ */}
+                <Box sx={{ textAlign: "center", px: 3, pb: 3, pt: 0.5 }}>
+                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: "#0f172a",
+                        width: 84,
+                        height: 84,
+                        mx: "auto",
+                        boxShadow:
+                          "0 0 0 4px #eff6ff, 0 8px 20px rgba(59,130,246,0.25)",
+                      }}
+                    >
+                      <Person sx={{ fontSize: 40 }} />
+                    </Avatar>
+                  </Box>
+
+                  <Typography
+                    sx={{ mt: 1.5, color: "#1e293b" }}
+                    fontWeight="600"
+                    fontSize="18px"
+                  >
+                    {t("common.systemAdmin")}
+                  </Typography>
+                </Box>
+
+                <Divider />
+
+                {/* ปุ่ม Log out */}
+                <Box sx={{ px: 1, py: 1 }}>
+                  <Box
                     onClick={handleLogout}
-                    startIcon={<Logout />}
                     sx={{
-                      justifyContent: "flex-start",
-                      color: "#ef4444",
-                      fontWeight: "600",
-                      textTransform: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      px: 1.5,
+                      py: 1,
                       borderRadius: 2,
+                      cursor: "pointer",
+                      "&:hover": { bgcolor: "#fef2f2" },
                     }}
                   >
-                    {t("common.logout")}
-                  </Button>
+                    <Logout sx={{ fontSize: 20, color: "#ef4444" }} />
+                    <Typography
+                      fontSize="13px"
+                      fontWeight="600"
+                      color="#ef4444"
+                    >
+                      {t("common.logout")}
+                    </Typography>
+                  </Box>
                 </Box>
               </Popover>
             </Box>
           </Box>
         </Box>
 
-        <Box className="content-area admin-content-area page-content" sx={{ p: { xs: 3, md: 6 }, flex: 1 }}>
+        <Box
+          className="content-area admin-content-area page-content"
+          sx={{ p: { xs: 3, md: 6 }, flex: 1 }}
+        >
           <Box
             className="page-header"
             sx={{
@@ -486,7 +533,11 @@ export default function AdminPointPolicy() {
                 color="#94a3b8"
                 sx={{ display: "block", mt: 0.5 }}
               >
-                {t("admin.lastUpdated")} {formatDateTime(lastUpdated, t("common.locale"), { fallback: t("common.noData") })} · 100 {t("common.points")}
+                {t("admin.lastUpdated")}{" "}
+                {formatDateTime(lastUpdated, t("common.locale"), {
+                  fallback: t("common.noData"),
+                })}{" "}
+                · 100 {t("common.points")}
               </Typography>
             </Box>
             <Button

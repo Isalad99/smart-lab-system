@@ -314,31 +314,6 @@ export default function History() {
                   {/* Menu Action List */}
                   <Box sx={{ px: 1, py: 1 }}>
                     <Box
-                      onClick={() => {
-                        handleCloseUserMenu();
-                        navigate("/profile");
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        px: 1.5,
-                        py: 1,
-                        borderRadius: 2,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "#f8fafc" },
-                      }}
-                    >
-                      <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                      <Typography
-                        fontSize="13px"
-                        fontWeight="600"
-                        color="#1e293b"
-                      >
-                        {t("common.settings")}
-                      </Typography>
-                    </Box>
-                    <Box
                       onClick={handleLogoutAction}
                       sx={{
                         display: "flex",
@@ -432,84 +407,86 @@ export default function History() {
 
               {pastBookings.length > 0 ? (
                 <>
-                <TableContainer>
-                  <Table sx={{ minWidth: 600 }}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#64748b",
-                          }}
-                        >
-                          #ID
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#64748b",
-                          }}
-                        >
-                          {t("user.room")}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#64748b",
-                          }}
-                        >
-                          {t("common.date")}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontWeight: "600",
-                            borderBottom: "1px solid #e2e8f0",
-                            color: "#64748b",
-                          }}
-                        >
-                          {t("common.time")}
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {pastBookings.map((row) => (
-                        <TableRow
-                          key={row.id}
-                          sx={{
-                            "&:last-child td, &:last-child th": { border: 0 },
-                            opacity: 0.8,
-                          }}
-                        >
-                          <TableCell sx={{ color: "#94a3b8" }}>
-                            {row.id.toString().padStart(4, "0")}
+                  <TableContainer>
+                    <Table sx={{ minWidth: 600 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#64748b",
+                            }}
+                          >
+                            #ID
                           </TableCell>
-                          <TableCell sx={{ color: "#64748b" }}>
-                            {row.lab_code}
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#64748b",
+                            }}
+                          >
+                            {t("user.room")}
                           </TableCell>
-                          <TableCell sx={{ color: "#64748b" }}>
-                            {formatDate(row.booking_date, t("common.locale"))}
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#64748b",
+                            }}
+                          >
+                            {t("common.date")}
                           </TableCell>
-                          <TableCell sx={{ color: "#64748b" }}>
-                            {row.start_time} - {row.end_time}
+                          <TableCell
+                            sx={{
+                              fontWeight: "600",
+                              borderBottom: "1px solid #e2e8f0",
+                              color: "#64748b",
+                            }}
+                          >
+                            {t("common.time")}
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                {total > PAGE_SIZE && (
-                  <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
-                    <Pagination
-                      count={Math.max(1, Math.ceil(total / PAGE_SIZE))}
-                      page={page}
-                      onChange={(_, nextPage) => setPage(nextPage)}
-                      color="primary"
-                    />
-                  </Box>
-                )}
+                      </TableHead>
+                      <TableBody>
+                        {pastBookings.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            sx={{
+                              "&:last-child td, &:last-child th": { border: 0 },
+                              opacity: 0.8,
+                            }}
+                          >
+                            <TableCell sx={{ color: "#94a3b8" }}>
+                              {row.id.toString().padStart(4, "0")}
+                            </TableCell>
+                            <TableCell sx={{ color: "#64748b" }}>
+                              {row.lab_code}
+                            </TableCell>
+                            <TableCell sx={{ color: "#64748b" }}>
+                              {formatDate(row.booking_date, t("common.locale"))}
+                            </TableCell>
+                            <TableCell sx={{ color: "#64748b" }}>
+                              {row.start_time} - {row.end_time}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  {total > PAGE_SIZE && (
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", pt: 3 }}
+                    >
+                      <Pagination
+                        count={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                        page={page}
+                        onChange={(_, nextPage) => setPage(nextPage)}
+                        color="primary"
+                      />
+                    </Box>
+                  )}
                 </>
               ) : (
                 <Box

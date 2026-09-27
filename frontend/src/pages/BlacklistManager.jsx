@@ -120,19 +120,28 @@ export default function BlacklistManager() {
     }
     try {
       if (isEditing) {
-        await axios.put(`${API_URL}/admin/blacklist/${currentId}`, formData, authConfig());
+        await axios.put(
+          `${API_URL}/admin/blacklist/${currentId}`,
+          formData,
+          authConfig(),
+        );
       } else {
         await axios.post(`${API_URL}/admin/blacklist`, formData, authConfig());
       }
       setOpenDialog(false);
       fetchBlacklist();
     } catch (err) {
-      setFormError(err.response?.data?.detail || t("admin.blacklistOperationFailed"));
+      setFormError(
+        err.response?.data?.detail || t("admin.blacklistOperationFailed"),
+      );
     }
   };
 
   const handleDelete = async (id, appName) => {
-    if (!window.confirm(`${t("admin.confirmRemoveBlacklistItem")}: ${appName}?`)) return;
+    if (
+      !window.confirm(`${t("admin.confirmRemoveBlacklistItem")}: ${appName}?`)
+    )
+      return;
     try {
       await axios.delete(`${API_URL}/admin/blacklist/${id}`, authConfig());
       fetchBlacklist();
@@ -179,7 +188,10 @@ export default function BlacklistManager() {
           zIndex: 10,
         }}
       >
-        <Box className="sidebar-logo" sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          className="sidebar-logo"
+          sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}
+        >
           <Box
             className="admin-brand-mark"
             sx={{
@@ -236,7 +248,7 @@ export default function BlacklistManager() {
             justifyContent: "space-between",
             px: 6,
             py: 1,
-                bgcolor: "var(--surface-elevated)",
+            bgcolor: "var(--surface-elevated)",
             borderBottom: "1px solid #e2e8f0",
             zIndex: 5,
           }}
@@ -314,8 +326,8 @@ export default function BlacklistManager() {
 
               <Popover
                 anchorEl={anchorEl}
-                open={openUserMenu}
-                onClose={handleCloseUserMenu}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 transformOrigin={{ vertical: "top", horizontal: "right" }}
                 PaperProps={{
@@ -329,7 +341,7 @@ export default function BlacklistManager() {
                   },
                 }}
               >
-                {/* header: identity email + close */}
+                {/* Header: อีเมล + ปุ่มปิด */}
                 <Box
                   sx={{
                     display: "flex",
@@ -347,12 +359,16 @@ export default function BlacklistManager() {
                   >
                     admin@smartlab.ac.th
                   </Typography>
-                  <IconButton size="small" onClick={handleCloseUserMenu}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setAnchorEl(null)}
+                    aria-label={t("common.closeMenu")}
+                  >
                     <Close sx={{ fontSize: 18, color: "#64748b" }} />
                   </IconButton>
                 </Box>
 
-                {/* avatar + greeting */}
+                {/* Avatar + ชื่อผู้ใช้ */}
                 <Box sx={{ textAlign: "center", px: 3, pb: 3, pt: 0.5 }}>
                   <Box sx={{ position: "relative", display: "inline-block" }}>
                     <Avatar
@@ -376,56 +392,12 @@ export default function BlacklistManager() {
                   >
                     {t("common.systemAdmin")}
                   </Typography>
-
-                  <Button
-                    variant="outlined"
-                    onClick={handleCloseUserMenu}
-                    sx={{
-                      mt: 2,
-                      borderRadius: 20,
-                      textTransform: "none",
-                      fontWeight: "600",
-                      fontSize: "13px",
-                      px: 2.5,
-                      py: 0.6,
-                      color: "#3b82f6",
-                      borderColor: "#cbd8f5",
-                      "&:hover": {
-                        borderColor: "#3b82f6",
-                        bgcolor: "#eff6ff",
-                      },
-                    }}
-                  >
-                    {t("common.manageAccount")}
-                  </Button>
                 </Box>
 
                 <Divider />
 
-                {/* settings + sign out */}
+                {/* ปุ่ม Log out */}
                 <Box sx={{ px: 1, py: 1 }}>
-                  <Box
-                    onClick={handleCloseUserMenu}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 2,
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: "#f8fafc" },
-                    }}
-                  >
-                    <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                    <Typography
-                      fontSize="13px"
-                      fontWeight="600"
-                      color="#1e293b"
-                    >
-                      {t("common.settings")}
-                    </Typography>
-                  </Box>
                   <Box
                     onClick={handleLogout}
                     sx={{
@@ -455,7 +427,10 @@ export default function BlacklistManager() {
         </Box>
 
         {/* CONTENT */}
-        <Box className="content-area admin-content-area page-content" sx={{ p: 6, flex: 1 }}>
+        <Box
+          className="content-area admin-content-area page-content"
+          sx={{ p: 6, flex: 1 }}
+        >
           <Fade in timeout={400}>
             <Box>
               {/* Add button row */}
@@ -569,12 +544,16 @@ export default function BlacklistManager() {
                         </TableRow>
                       ) : (
                         filtered.map((item, index) => (
-                      <TableRow
-                        key={item.id}
-                        sx={{
-                          backgroundColor: "var(--card-bg)",
-                          "& td": { borderBottom: "1px solid var(--border-light)" },
-                          "&:hover": { backgroundColor: "var(--surface-subtle)" },
+                          <TableRow
+                            key={item.id}
+                            sx={{
+                              backgroundColor: "var(--card-bg)",
+                              "& td": {
+                                borderBottom: "1px solid var(--border-light)",
+                              },
+                              "&:hover": {
+                                backgroundColor: "var(--surface-subtle)",
+                              },
                             }}
                           >
                             {/* Index */}
@@ -661,7 +640,9 @@ export default function BlacklistManager() {
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              {formatDate(item.created_at, t("common.locale"), { fallback: "-" })}
+                              {formatDate(item.created_at, t("common.locale"), {
+                                fallback: "-",
+                              })}
                             </TableCell>
 
                             {/* Actions */}

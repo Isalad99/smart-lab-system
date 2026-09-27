@@ -192,7 +192,11 @@ export default function ManageLabs() {
 
   const handleUpdateLab = async () => {
     try {
-      await axios.put(`${API_URL}/admin/labs/${activeLab.id}`, editFormData, authConfig());
+      await axios.put(
+        `${API_URL}/admin/labs/${activeLab.id}`,
+        editFormData,
+        authConfig(),
+      );
       alert(t("admin.updateSucceeded"));
       fetchLabs();
     } catch (error) {
@@ -214,16 +218,22 @@ export default function ManageLabs() {
       handleGoBack();
       fetchLabs();
     } catch (error) {
-      alert(`${t("admin.deleteFailed")}: ${error.response?.data?.detail || error.message}`);
+      alert(
+        `${t("admin.deleteFailed")}: ${error.response?.data?.detail || error.message}`,
+      );
     }
   };
 
   const handleToggleStatus = async () => {
     const newStatus = activeLab.status === "active" ? "disabled" : "active";
     try {
-      await axios.put(`${API_URL}/admin/labs/${activeLab.id}/status`, {
-        status: newStatus,
-      }, authConfig());
+      await axios.put(
+        `${API_URL}/admin/labs/${activeLab.id}/status`,
+        {
+          status: newStatus,
+        },
+        authConfig(),
+      );
       fetchLabs();
     } catch (error) {
       console.error("Status toggle failed:", error);
@@ -330,15 +340,19 @@ export default function ManageLabs() {
       setOpenScheduleDialog(false);
       fetchSchedules(activeLab.id);
     } catch (error) {
-      alert(`${t("admin.operationFailed")}: ${error.response?.data?.detail || ""}`);
+      alert(
+        `${t("admin.operationFailed")}: ${error.response?.data?.detail || ""}`,
+      );
     }
   };
 
   const handleDeleteSchedule = async (scheduleId) => {
-    if (!window.confirm(t("admin.deleteScheduleConfirmation")))
-      return;
+    if (!window.confirm(t("admin.deleteScheduleConfirmation"))) return;
     try {
-      await axios.delete(`${API_URL}/admin/schedules/${scheduleId}`, authConfig());
+      await axios.delete(
+        `${API_URL}/admin/schedules/${scheduleId}`,
+        authConfig(),
+      );
       fetchSchedules(activeLab.id);
     } catch {
       alert(t("admin.deleteFailed"));
@@ -373,7 +387,10 @@ export default function ManageLabs() {
           zIndex: 10,
         }}
       >
-        <Box className="sidebar-logo" sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          className="sidebar-logo"
+          sx={{ p: 4, display: "flex", gap: 2, alignItems: "center" }}
+        >
           <Box
             className="admin-brand-mark"
             sx={{
@@ -440,7 +457,9 @@ export default function ManageLabs() {
             fontWeight="700"
             sx={{ color: "#1e293b", letterSpacing: "-1px" }}
           >
-            {viewMode === "list" ? t("admin.manageLabsTitle") : t("common.details")}
+            {viewMode === "list"
+              ? t("admin.manageLabsTitle")
+              : t("common.details")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Paper
@@ -521,7 +540,7 @@ export default function ManageLabs() {
                   },
                 }}
               >
-                {/* header: identity email + close */}
+                {/* Header: อีเมล + ปุ่มปิด */}
                 <Box
                   sx={{
                     display: "flex",
@@ -544,7 +563,7 @@ export default function ManageLabs() {
                   </IconButton>
                 </Box>
 
-                {/* avatar + greeting */}
+                {/* Avatar + ชื่อผู้ใช้ */}
                 <Box sx={{ textAlign: "center", px: 3, pb: 3, pt: 0.5 }}>
                   <Box sx={{ position: "relative", display: "inline-block" }}>
                     <Avatar
@@ -568,59 +587,12 @@ export default function ManageLabs() {
                   >
                     {currentUser?.name || t("common.systemAdmin")}
                   </Typography>
-
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      handleCloseUserMenu();
-                      navigate("/profile");
-                    }}
-                    sx={{
-                      mt: 2,
-                      borderRadius: 20,
-                      textTransform: "none",
-                      fontWeight: "600",
-                      fontSize: "13px",
-                      px: 2.5,
-                      py: 0.6,
-                      color: "#3b82f6",
-                      borderColor: "#cbd8f5",
-                      "&:hover": {
-                        borderColor: "#3b82f6",
-                        bgcolor: "#eff6ff",
-                      },
-                    }}
-                  >
-                    {t("common.manageAccount")}
-                  </Button>
                 </Box>
 
                 <Divider />
 
-                {/* settings + sign out */}
+                {/* ปุ่ม Log out อย่างเดียว */}
                 <Box sx={{ px: 1, py: 1 }}>
-                  <Box
-                    onClick={handleCloseUserMenu}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 2,
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: "#f8fafc" },
-                    }}
-                  >
-                    <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                    <Typography
-                      fontSize="13px"
-                      fontWeight="600"
-                      color="#1e293b"
-                    >
-                      {t("common.settings")}
-                    </Typography>
-                  </Box>
                   <Box
                     onClick={handleLogout}
                     sx={{
@@ -650,7 +622,10 @@ export default function ManageLabs() {
         </Box>
 
         {/* CONTENT BODY */}
-        <Box className="content-area admin-content-area page-content" sx={{ p: 6, flex: 1 }}>
+        <Box
+          className="content-area admin-content-area page-content"
+          sx={{ p: 6, flex: 1 }}
+        >
           {/* ================= VIEW 1: LIST LABS ================= */}
           {!activeLab && (
             <Fade in={viewMode === "list"} timeout={400}>
@@ -764,7 +739,9 @@ export default function ManageLabs() {
                             </Typography>
                             <Chip
                               label={
-                                lab.status === "active" ? t("common.active") : t("admin.disabled")
+                                lab.status === "active"
+                                  ? t("common.active")
+                                  : t("admin.disabled")
                               }
                               sx={{
                                 bgcolor:
@@ -935,7 +912,8 @@ export default function ManageLabs() {
                               fontWeight="600"
                               color="#334155"
                             >
-                              {t("admin.capacity")}: {activeLab.capacity} {t("admin.users")}
+                              {t("admin.capacity")}: {activeLab.capacity}{" "}
+                              {t("admin.users")}
                             </Typography>
                           </Box>
                           <Box
@@ -1516,7 +1494,9 @@ export default function ManageLabs() {
         }}
       >
         <DialogTitle sx={{ fontWeight: "700", color: "#0f172a" }}>
-          {isEditingSchedule ? t("admin.editClassSchedule") : t("admin.addClassSchedule")}
+          {isEditingSchedule
+            ? t("admin.editClassSchedule")
+            : t("admin.addClassSchedule")}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Grid container spacing={2.5} sx={{ mt: 0.5 }}>

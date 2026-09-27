@@ -297,11 +297,7 @@ export default function Booking() {
       currentMonth,
       selectedDate,
     );
-    const todayReference = getLabDateReference(
-      labYear,
-      labMonth - 1,
-      labDay,
-    );
+    const todayReference = getLabDateReference(labYear, labMonth - 1, labDay);
 
     if (selectedDateReference > todayReference) return "valid";
 
@@ -428,9 +424,7 @@ export default function Booking() {
     } catch (requestError) {
       const detail = requestError.response?.data?.detail;
       const message =
-        typeof detail === "string"
-          ? detail
-            : t("user.pointRequestFailed");
+        typeof detail === "string" ? detail : t("user.pointRequestFailed");
       alert(message);
     } finally {
       setPointRequestLoading(false);
@@ -460,7 +454,10 @@ export default function Booking() {
   const openNotifMenu = Boolean(notifAnchorEl);
 
   const visiblePointLogs = useMemo(
-    () => pointLogs.filter((log) => !HIDDEN_POINT_NOTIFICATION_REASONS.has(log.reason)),
+    () =>
+      pointLogs.filter(
+        (log) => !HIDDEN_POINT_NOTIFICATION_REASONS.has(log.reason),
+      ),
     [pointLogs],
   );
 
@@ -534,7 +531,9 @@ export default function Booking() {
               <span className="font-baseline-text">Smart Lab</span>
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              <span className="font-baseline-text">{t("common.brandTagline")}</span>
+              <span className="font-baseline-text">
+                {t("common.brandTagline")}
+              </span>
             </Typography>
           </div>
         </div>
@@ -544,16 +543,20 @@ export default function Booking() {
             className="menu-item active"
             onClick={() => setIsSidebarOpen(false)}
           >
-            <EventNote /> <span className="font-baseline-text">{t("common.labReserve")}</span>
+            <EventNote />{" "}
+            <span className="font-baseline-text">{t("common.labReserve")}</span>
           </div>
           <div className="menu-item" onClick={() => navigate("/reserved")}>
-            <Assignment /> <span className="font-baseline-text">{t("common.reserved")}</span>
+            <Assignment />{" "}
+            <span className="font-baseline-text">{t("common.reserved")}</span>
           </div>
           <div className="menu-item" onClick={() => navigate("/history")}>
-            <History /> <span className="font-baseline-text">{t("common.history")}</span>
+            <History />{" "}
+            <span className="font-baseline-text">{t("common.history")}</span>
           </div>
           <div className="menu-item" onClick={() => navigate("/my-tickets")}>
-            <ConfirmationNumber /> <span className="font-baseline-text">{t("common.myTickets")}</span>
+            <ConfirmationNumber />{" "}
+            <span className="font-baseline-text">{t("common.myTickets")}</span>
           </div>
         </div>
 
@@ -562,7 +565,8 @@ export default function Booking() {
           style={{ flex: "none", paddingBottom: "24px" }}
         >
           <div className="menu-item" onClick={() => setIsSupportOpen(true)}>
-            <SupportAgent /> <span className="font-baseline-text">{t("common.support")}</span>
+            <SupportAgent />{" "}
+            <span className="font-baseline-text">{t("common.support")}</span>
           </div>
         </div>
       </div>
@@ -608,7 +612,11 @@ export default function Booking() {
             <IconButton sx={{ display: { xs: "block", md: "none" } }}>
               <Search sx={{ color: "#111827" }} />
             </IconButton>
-            <IconButton className="header-notification-button" onClick={handleNotifClick} aria-label={t("common.notifications")}>
+            <IconButton
+              className="header-notification-button"
+              onClick={handleNotifClick}
+              aria-label={t("common.notifications")}
+            >
               <Badge
                 variant="dot"
                 color="error"
@@ -663,7 +671,10 @@ export default function Booking() {
               <Box sx={{ overflowY: "auto", px: 1, pb: 1 }}>
                 {notifications.length === 0 ? (
                   <Box sx={{ py: 4, textAlign: "center" }}>
-                    <Typography fontSize="13px" sx={{ color: "var(--text-gray)" }}>
+                    <Typography
+                      fontSize="13px"
+                      sx={{ color: "var(--text-gray)" }}
+                    >
                       {t("common.noNotifications")}
                     </Typography>
                   </Box>
@@ -763,10 +774,14 @@ export default function Booking() {
                     fontWeight="600"
                     lineHeight={1.2}
                   >
-                    <span className="font-baseline-text">{currentUser.name}</span>
+                    <span className="font-baseline-text">
+                      {currentUser.name}
+                    </span>
                   </Typography>
                   <Typography variant="caption" color="textSecondary">
-                    <span className="font-baseline-text">{currentUser.role}</span>
+                    <span className="font-baseline-text">
+                      {currentUser.role}
+                    </span>
                   </Typography>
                 </Box>
 
@@ -889,31 +904,6 @@ export default function Booking() {
                   {/* Menu Action List */}
                   <Box sx={{ px: 1, py: 1 }}>
                     <Box
-                      onClick={() => {
-                        handleCloseUserMenu();
-                        navigate("/profile");
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        px: 1.5,
-                        py: 1,
-                        borderRadius: 2,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "#f8fafc" },
-                      }}
-                    >
-                      <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                      <Typography
-                        fontSize="13px"
-                        fontWeight="600"
-                        color="#1e293b"
-                      >
-                        {t("common.settings")}
-                      </Typography>
-                    </Box>
-                    <Box
                       onClick={handleLogoutAction}
                       sx={{
                         display: "flex",
@@ -1031,7 +1021,10 @@ export default function Booking() {
                           >
                             <Computer sx={{ fontSize: 60, color: "#3b82f6" }} />
                           </Box>
-                          <Box className="room-card__content" sx={{ p: 3, flexGrow: 1, bgcolor: "white" }}>
+                          <Box
+                            className="room-card__content"
+                            sx={{ p: 3, flexGrow: 1, bgcolor: "white" }}
+                          >
                             <Box
                               sx={{
                                 display: "flex",
@@ -1045,7 +1038,9 @@ export default function Booking() {
                                 fontWeight="600"
                                 color="#1e293b"
                               >
-                                <span className="font-baseline-text">{room.code}</span>
+                                <span className="font-baseline-text">
+                                  {room.code}
+                                </span>
                               </Typography>
                               <span
                                 className={
@@ -1079,7 +1074,9 @@ export default function Booking() {
                               title={room.name}
                               sx={{ mt: 1 }}
                             >
-                              <span className="font-baseline-text">{room.name}</span>
+                              <span className="font-baseline-text">
+                                {room.name}
+                              </span>
                             </Typography>
                             <Divider sx={{ my: 2 }} />
                             <Box
@@ -1116,11 +1113,11 @@ export default function Booking() {
                                   alignItems: "center",
                                   gap: 1,
                                 }}
-                                >
-                                  <span className="font-baseline-text">
-                                    {t("user.location")}: {room.location || "-"}
-                                  </span>
-                                </Box>
+                              >
+                                <span className="font-baseline-text">
+                                  {t("user.location")}: {room.location || "-"}
+                                </span>
+                              </Box>
                             </Box>
                           </Box>
                         </Paper>
@@ -1238,14 +1235,18 @@ export default function Booking() {
                         color="#0f172a"
                         sx={{ mb: 1 }}
                       >
-                        <span className="font-baseline-text">{selectedRoom.code}</span>
+                        <span className="font-baseline-text">
+                          {selectedRoom.code}
+                        </span>
                       </Typography>
                       <Typography
                         variant="body1"
                         color="textSecondary"
                         sx={{ mb: 3, lineHeight: 1.6 }}
                       >
-                        <span className="font-baseline-text">{selectedRoom.name}</span>
+                        <span className="font-baseline-text">
+                          {selectedRoom.name}
+                        </span>
                       </Typography>
                       <Divider sx={{ mb: 3 }} />
                       <Box
@@ -1263,7 +1264,8 @@ export default function Booking() {
                             <PeopleAlt />
                           </Avatar>
                           <Typography fontWeight="600">
-                            {t("user.capacity")}: {selectedRoom.capacity} {t("user.users")}
+                            {t("user.capacity")}: {selectedRoom.capacity}{" "}
+                            {t("user.users")}
                           </Typography>
                         </Box>
                         <Box
@@ -1309,7 +1311,7 @@ export default function Booking() {
                       }}
                     >
                       <Typography variant="h6" fontWeight="600">
-                          1. {t("user.selectDate")}
+                        1. {t("user.selectDate")}
                       </Typography>
                       <Chip
                         label={t("user.advanceBooking")}
@@ -1363,19 +1365,17 @@ export default function Booking() {
                           textAlign: "center",
                         }}
                       >
-                        {t("user.weekdaysShort").map(
-                          (day) => (
-                            <Typography
-                              key={day}
-                              variant="caption"
-                              fontWeight="600"
-                              color="#94a3b8"
-                              sx={{ mb: 1 }}
-                            >
-                              {day}
-                            </Typography>
-                          ),
-                        )}
+                        {t("user.weekdaysShort").map((day) => (
+                          <Typography
+                            key={day}
+                            variant="caption"
+                            fontWeight="600"
+                            color="#94a3b8"
+                            sx={{ mb: 1 }}
+                          >
+                            {day}
+                          </Typography>
+                        ))}
 
                         {[...Array(emptySlots)].map((_, i) => (
                           <Box key={`empty-${i}`} />
@@ -1392,8 +1392,7 @@ export default function Booking() {
                           );
                           const isPastDate =
                             iterationDate < todayMidnightForCalendar;
-                          const isTooFarDate =
-                            iterationDate > maxDateMidnight;
+                          const isTooFarDate = iterationDate > maxDateMidnight;
                           const isDisabledDate = isPastDate || isTooFarDate;
 
                           return (
@@ -1423,7 +1422,9 @@ export default function Booking() {
                               <Typography
                                 className="booking-calendar-day-number"
                                 variant="body2"
-                                fontWeight={isSelected || !isDisabledDate ? 600 : 300}
+                                fontWeight={
+                                  isSelected || !isDisabledDate ? 600 : 300
+                                }
                               >
                                 {dayNumber}
                               </Typography>
@@ -1446,7 +1447,9 @@ export default function Booking() {
                           borderTop: "1px solid var(--border-light)",
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
                           <Box
                             aria-hidden="true"
                             sx={{
@@ -1462,7 +1465,9 @@ export default function Booking() {
                             {t("user.dateSelectable")}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
                           <Box
                             aria-hidden="true"
                             sx={{
@@ -1651,7 +1656,7 @@ export default function Booking() {
                               (pointStatus.point_request?.status ===
                               "pending" ? (
                                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                  {t("user.pointRequestSentPrefix")} {" "}
+                                  {t("user.pointRequestSentPrefix")}{" "}
                                   {pointStatus.point_request.requested_points ||
                                     pointStatus.point_request_amount ||
                                     10}{" "}
@@ -1746,7 +1751,9 @@ export default function Booking() {
                             },
                           }}
                         >
-                          {currentUser ? t("user.confirmBooking") : t("user.loginToBook")}
+                          {currentUser
+                            ? t("user.confirmBooking")
+                            : t("user.loginToBook")}
                         </Button>
                       </Paper>
                     </Box>
@@ -1806,11 +1813,16 @@ export default function Booking() {
             color="#64748b"
             sx={{ mb: 3, lineHeight: 1.6 }}
           >
-            {t("user.reservationConfirmed")} <strong>{selectedRoom?.code}</strong>
+            {t("user.reservationConfirmed")}{" "}
+            <strong>{selectedRoom?.code}</strong>
             <br />
-            {t("user.bookingDate")}: <strong>{monthNameShort} {selectedDate}</strong>
+            {t("user.bookingDate")}:{" "}
+            <strong>
+              {monthNameShort} {selectedDate}
+            </strong>
             <br />
-            {t("user.bookingTime")}: <strong>{SLOT_DISPLAY_MAPPING[selectedTimeSlot]}</strong>
+            {t("user.bookingTime")}:{" "}
+            <strong>{SLOT_DISPLAY_MAPPING[selectedTimeSlot]}</strong>
           </Typography>
           <Button
             fullWidth

@@ -90,8 +90,7 @@ export default function MyTickets() {
       setTotal(Number(response.data?.total) || 0);
     } catch (requestError) {
       setError(
-        requestError.response?.data?.detail ||
-          t("user.myTicketsLoadFailed"),
+        requestError.response?.data?.detail || t("user.myTicketsLoadFailed"),
       );
     } finally {
       setLoading(false);
@@ -333,27 +332,6 @@ export default function MyTickets() {
                   <Divider />
                   <Box sx={{ px: 1, py: 1 }}>
                     <Box
-                      onClick={() => {
-                        setAnchorEl(null);
-                        navigate("/profile");
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        px: 1.5,
-                        py: 1,
-                        borderRadius: 2,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "#f8fafc" },
-                      }}
-                    >
-                      <Settings sx={{ fontSize: 20, color: "#64748b" }} />
-                      <Typography fontSize="13px" fontWeight="600" color="#1e293b">
-                        {t("common.settings")}
-                      </Typography>
-                    </Box>
-                    <Box
                       onClick={handleLogout}
                       sx={{
                         display: "flex",
@@ -367,7 +345,11 @@ export default function MyTickets() {
                       }}
                     >
                       <Logout sx={{ fontSize: 20, color: "#ef4444" }} />
-                      <Typography fontSize="13px" fontWeight="600" color="#ef4444">
+                      <Typography
+                        fontSize="13px"
+                        fontWeight="600"
+                        color="#ef4444"
+                      >
                         {t("common.logout")}
                       </Typography>
                     </Box>
@@ -484,97 +466,123 @@ export default function MyTickets() {
                     <ConfirmationNumber
                       sx={{ fontSize: 52, color: "#cbd5e1", mb: 1 }}
                     />
-                    <Typography variant="body1" color="#64748b" fontWeight="600">
+                    <Typography
+                      variant="body1"
+                      color="#64748b"
+                      fontWeight="600"
+                    >
                       {t("user.noTicketsSent")}
                     </Typography>
-                    <Typography variant="body2" color="#94a3b8" sx={{ mt: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      color="#94a3b8"
+                      sx={{ mt: 0.5 }}
+                    >
                       {t("user.supportHelp")}
                     </Typography>
                   </Box>
                 ) : (
                   <>
-                  <TableContainer>
-                    <Table sx={{ minWidth: 760 }}>
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                          <TableCell sx={{ fontWeight: "700", color: "#64748b" }}>
-                            {t("user.subject")}
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: "700", color: "#64748b" }}>
-                            {t("user.message")}
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: "700", color: "#64748b" }}>
-                            {t("user.submittedAt")}
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: "700", color: "#64748b" }}>
-                            {t("common.status")}
-                          </TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {tickets.map((ticket) => {
-                          const status = STATUS_LABELS[ticket.status] || {
-                            key: "user.unknownStatus",
-                            color: "default",
-                          };
+                    <TableContainer>
+                      <Table sx={{ minWidth: 760 }}>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: "#f8fafc" }}>
+                            <TableCell
+                              sx={{ fontWeight: "700", color: "#64748b" }}
+                            >
+                              {t("user.subject")}
+                            </TableCell>
+                            <TableCell
+                              sx={{ fontWeight: "700", color: "#64748b" }}
+                            >
+                              {t("user.message")}
+                            </TableCell>
+                            <TableCell
+                              sx={{ fontWeight: "700", color: "#64748b" }}
+                            >
+                              {t("user.submittedAt")}
+                            </TableCell>
+                            <TableCell
+                              sx={{ fontWeight: "700", color: "#64748b" }}
+                            >
+                              {t("common.status")}
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {tickets.map((ticket) => {
+                            const status = STATUS_LABELS[ticket.status] || {
+                              key: "user.unknownStatus",
+                              color: "default",
+                            };
 
-                          return (
-                            <TableRow key={ticket.id} hover>
-                              <TableCell
-                                sx={{
-                                  minWidth: 180,
-                                  maxWidth: 240,
-                                  fontWeight: "600",
-                                  color: "#334155",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                {ticket.subject}
-                              </TableCell>
-                              <TableCell
-                                sx={{
-                                  minWidth: 260,
-                                  maxWidth: 420,
-                                  color: "#475569",
-                                  whiteSpace: "pre-wrap",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                {ticket.message}
-                              </TableCell>
-                              <TableCell
-                                sx={{
-                                  minWidth: 170,
-                                  color: "#475569",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {formatDateTime(ticket.created_at, t("common.locale"), { fallback: "-" })}
-                              </TableCell>
-                              <TableCell sx={{ minWidth: 150 }}>
-                                <Chip
-                                  label={t(status.key)}
-                                  color={status.color}
-                                  size="small"
-                                  sx={{ fontWeight: "700" }}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                  {total > PAGE_SIZE && (
-                    <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
-                      <Pagination
-                        count={Math.max(1, Math.ceil(total / PAGE_SIZE))}
-                        page={page}
-                        onChange={(_, nextPage) => setPage(nextPage)}
-                        color="primary"
-                      />
-                    </Box>
-                  )}
+                            return (
+                              <TableRow key={ticket.id} hover>
+                                <TableCell
+                                  sx={{
+                                    minWidth: 180,
+                                    maxWidth: 240,
+                                    fontWeight: "600",
+                                    color: "#334155",
+                                    wordBreak: "break-word",
+                                  }}
+                                >
+                                  {ticket.subject}
+                                </TableCell>
+                                <TableCell
+                                  sx={{
+                                    minWidth: 260,
+                                    maxWidth: 420,
+                                    color: "#475569",
+                                    whiteSpace: "pre-wrap",
+                                    wordBreak: "break-word",
+                                  }}
+                                >
+                                  {ticket.message}
+                                </TableCell>
+                                <TableCell
+                                  sx={{
+                                    minWidth: 170,
+                                    color: "#475569",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {formatDateTime(
+                                    ticket.created_at,
+                                    t("common.locale"),
+                                    { fallback: "-" },
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 150 }}>
+                                  <Chip
+                                    label={t(status.key)}
+                                    color={status.color}
+                                    size="small"
+                                    sx={{ fontWeight: "700" }}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                    {total > PAGE_SIZE && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          pt: 3,
+                        }}
+                      >
+                        <Pagination
+                          count={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                          page={page}
+                          onChange={(_, nextPage) => setPage(nextPage)}
+                          color="primary"
+                        />
+                      </Box>
+                    )}
                   </>
                 )}
               </Paper>
